@@ -21,19 +21,18 @@ using namespace std;
 
 int solution(vector<int>& A) {
     // Implement your solution here
-    const int N = A.size();
-    vector<int> record(1+N, 0);
-    for (int i = 0; i < A.size(); i++) {
-        if (A[i] > 0 && A[i] <= N) {
-            record[A[i]] = 1;
-        }
-    }
 
-    for (int i = 1; i < record.size(); i++) {
-        if (record[i] == 0) {
-            return i;
+    const int N = A.size();
+    int ones = 0;
+    int sum = 0;
+    for (int i = N - 1; i >= 0; i--) {
+        if (A[i] == 1) {
+            ones++;
+        } else {  // zeros
+            sum = sum + ones;
         }
     }
-    return N + 1;
+    return sum;    
 }
+
 
