@@ -19,51 +19,43 @@ using namespace std;
 // you can write to stdout for debugging purposes, e.g.
 // cout << "this is a debug message" << endl;
 
-bool contains(vector<int> pos, int s, int e) {
-    auto lowit = lower_bound(pos.begin(), pos.end(), s);
-    if (lowit == pos.end()) {
-        return false;
-    }
+#include <vector>
+#include <string>
 
-    if (*lowit <= e) {
-        return true;
-    }  else {
-        return false;
-    }
-}
+using namespace std;
 
 vector<int> solution(string& S, vector<int>& P, vector<int>& Q) {
- 
-    // Implement your solution here
-    vector<int> charPos[4];
-    for (int i = 0; i < S.size(); i++) {
-        char cur = S[i];
-        if (cur == 'A') {
-            charPos[0].push_back(i);
-        } else if (cur == 'C') {
-            charPos[1].push_back(i);
-        } else if (cur == 'G') {
-            charPos[2].push_back(i);
-        } else if (cur == 'T') {
-            charPos[3].push_back(i);
-        }
+    int N = S.size();
+    int M = P.size();
+
+    // Create prefix sum arrays for each nucleotide type
+    vector<int> A(N + 1, 0);
+    vector<int> C(N + 1, 0);
+    vector<int> G(N + 1, 0);
+    vector<int> T(N + 1, 0);
+
+    for (int i = 0; i < N; ++i) {
+        A[i + 1] = A[i] + (S[i] == 'A' ? 1 : 0);
+        C[i + 1] = C[i] + (S[i] == 'C' ? 1 : 0);
+        G[i + 1] = G[i] + (S[i] == 'G' ? 1 : 0);
+        T[i + 1] = T[i] + (S[i] == 'T' ? 1 : 0);
     }
 
     vector<int> result;
-    for (int i = 0; i < P.size(); i++) {
-        int s = P[i];
-        int e = Q[i];
-        int factor = INT_MAX;
-        for (int j = 3; j >= 0; j--) {
-            if (contains(charPos[j], s, e)) {
-                factor = min(factor, j+1); // j+1 is the actual factor 1-4
-            }
-        }
-        result.push_back(factor);
+
+    // For each query, find the minimal impact factor
+    for (int i = 0; i < M; ++i) {
+        int start = P[i];
+        int end = Q[i] + 1; // Adding 1 to include the end position
+        if (A[end] - A[start] > 0)
+            result.push_back(1);
+        else if (C[end] - C[start] > 0)
+            result.push_back(2);
+        else if (G[end] - G[start] > 0)
+            result.push_back(3);
+        else
+            result.push_back(4);
     }
+
     return result;
 }
-
-
-
-
