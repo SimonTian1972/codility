@@ -19,20 +19,28 @@ using namespace std;
 // you can write to stdout for debugging purposes, e.g.
 // cout << "this is a debug message" << endl;
 
+
 int solution(vector<int>& A) {
     // Implement your solution here
 
     const int N = A.size();
     int ones = 0;
-    int sum = 0;
+    long sum = 0;
     for (int i = N - 1; i >= 0; i--) {
         if (A[i] == 1) {
             ones++;
-        } else {  // zeros
+        }
+        else {  // zeros
             sum = sum + ones;
         }
     }
-    return sum;    
+    if (sum > 1000000000) {
+        return -1;
+    }
+    else {
+        return sum;
+    }
 }
+
 
 
