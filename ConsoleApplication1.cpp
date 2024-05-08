@@ -35,6 +35,15 @@ using namespace std;
 #include <algorithm>
 using namespace std;
 
+#include <map>
+#include <vector>
+#include <set>
+#include <climits>
+#include <unordered_map>
+#include <algorithm>
+#include <iostream>
+using namespace std;
+
 
 int solution(vector<int>& A) {
     const auto MAX_INTERSECTIONS = 10000000;
@@ -49,8 +58,8 @@ int solution(vector<int>& A) {
     // Add the pairs to the array
     for (int i = 0; i < v_size; ++i) {
         int radius = A[i];
-        int begin = i - radius;
-        int end = i + radius;
+        int begin = max(0, static_cast<int>(i) - radius);
+        int end = min(v_size - 1, i + radius);
         segments.push_back({ begin, end });
     }
 
@@ -79,5 +88,11 @@ int solution(vector<int>& A) {
         }
     }
     return intersections;
+}
+
+int main() {
+    vector<int> A = { 1, 2147483647, 0 };
+    cout << "Result: " << solution(A) << endl;
+    return 0;
 }
 
