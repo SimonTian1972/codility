@@ -20,27 +20,19 @@ using namespace std;
 // cout << "this is a debug message" << endl;
 
 
-int solution(vector<int>& A) {
-    // Implement your solution here
 
-    const int N = A.size();
-    int ones = 0;
-    long sum = 0;
-    for (int i = N - 1; i >= 0; i--) {
-        if (A[i] == 1) {
-            ones++;
-        }
-        else {  // zeros
-            sum = sum + ones;
-        }
+int solution(int A, int B, int K) {
+    // Implement your solution here
+    int numA = A / K;
+    int numB = B / K;
+    // how about numA itself
+    int ret = numB - numA;
+    if (A % K == 0) { // should include A itself
+        ret = ret + 1;
     }
-    if (sum > 1000000000) {
-        return -1;
-    }
-    else {
-        return sum;
-    }
+    return ret;
 }
+
 
 
 
