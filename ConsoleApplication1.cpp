@@ -31,7 +31,7 @@ int solution(vector<int>& A) {
     sort(A.begin(), A.end());
     int len = A.size();
     for (int i = 0; i <= len - 3; i++) {
-        if (A[i] + A[i + 1] > A[i + 2]) {
+        if (long(A[i]) + long(A[i + 1]) > long(A[i + 2])) {
             return 1;
         }
     }
