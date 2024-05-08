@@ -28,10 +28,10 @@ int solution(string& S) {
             myStack.push(cur);
         }
         else {
-            char top = myStack.top();
             if (myStack.size() == 0) {
                 return false;
             }
+            char top = myStack.top();
             if (right[cur] == top) {
                 myStack.pop();
             }
