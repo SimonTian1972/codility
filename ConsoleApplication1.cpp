@@ -13,6 +13,12 @@ using namespace std;
 // cout << "this is a debug message" << endl;
 
 
+// you can use includes, for example:
+// #include <algorithm>
+
+// you can write to stdout for debugging purposes, e.g.
+// cout << "this is a debug message" << endl;
+
 vector<int> solution(int N, vector<int>& A) {
     // Implement your solution here
     vector<int> result(N, 0);
@@ -26,6 +32,12 @@ vector<int> solution(int N, vector<int>& A) {
         }
         else {
             curmaxCount = nextmaxCount;
+        }
+    }
+
+    for (unsigned int i = 0; i < result.size(); i++) {
+        if (result[i] < curmaxCount) {
+            result[i] = curmaxCount;
         }
     }
     return result;
