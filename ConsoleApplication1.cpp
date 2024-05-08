@@ -19,27 +19,21 @@ using namespace std;
 // you can write to stdout for debugging purposes, e.g.
 // cout << "this is a debug message" << endl;
 
-vector<int> solution(int N, vector<int>& A) {
+int solution(vector<int>& A) {
     // Implement your solution here
-    vector<int> result(N, 0);
-    int curmaxCount = 0;
-    int nextmaxCount = 0;
-    for (unsigned int i = 0; i < A.size(); i++) {
-        if (A[i] >= 1 && A[i] <= N) {
-            int newV = max(curmaxCount + 1, result[A[i] - 1] + 1);
-            result[A[i] - 1] = newV;
-            nextmaxCount = max(nextmaxCount, result[A[i] - 1]);
-        }
-        else {
-            curmaxCount = nextmaxCount;
+    const int N = A.size();
+    vector<int> record(1+N, 0);
+    for (int i = 0; i < A.size(); i++) {
+        if (A[i] > 0 && A[i] <= N) {
+            record[A[i]] = 1;
         }
     }
 
-    for (unsigned int i = 0; i < result.size(); i++) {
-        if (result[i] < curmaxCount) {
-            result[i] = curmaxCount;
+    for (int i = 1; i < record.size(); i++) {
+        if (record[i] == 0) {
+            return i;
         }
     }
-    return result;
+    return N + 1;
 }
 
