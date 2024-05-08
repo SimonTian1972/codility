@@ -52,9 +52,7 @@ int solution(vector<int>& A) {
     auto it = sortSec.begin();
     for (int i = 0; i < sortSec.size(); i++) {
         int end = sortSec[i][1];
-        auto next = upper_bound(it + i, sortSec.end(), end,
-            [](const vector<int>& a, const int b)
-            {return a[0] < b; });
+        auto next = upper_bound(it + i, sortSec.end(), vector<int>{end, 0});
 
         int temp = distance(next, it + i);
         count = count + (temp - 1);
@@ -63,23 +61,5 @@ int solution(vector<int>& A) {
 }
 
 
-int solution2(vector<int>& A) {
-    int count = 0;
-    vector<vector<int>> sortSec;
-    for (int i = 0; i < A.size(); i++) {
-        sortSec.push_back({ i - A[i], i + A[i] });
-    }
-    sort(sortSec.begin(), sortSec.end());
-    auto it = sortSec.begin();
-    for (int i = 0; i < sortSec.size(); i++) {
-        int end = sortSec[i][1];
-        auto next = upper_bound(it, sortSec.end(), end,
-            [](const vector<int>& a, const int& b)
-            { return a[0] < b; }); // Compare based on the first element of vector
 
-        int temp = distance(it, next); // Calculate the number of elements less than end
-        count += temp; // Add temp, as it represents the number of intervals that intersect with the current interval
-    }
-    return count;
-}
 
