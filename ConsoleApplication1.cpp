@@ -28,25 +28,12 @@ using namespace std;
 
 int solution(vector<int>& A) {
     // Implement your solution here
-    vector<int> plus;
-    vector<int> negs;
-    for (int num : A) {
-        if (num >= 0) {
-            plus.push_back(num);
-        }
-        else {
-            negs.push_back(-num);
+    sort(A.begin(), A.end());
+    int len = A.size();
+    for (int i = 0; i <= len - 3; i++) {
+        if (A[i] + A[i + 1] > A[i + 2]) {
+            return 1;
         }
     }
-    sort(plus.begin(), plus.end(), greater<int>());
-    sort(negs.begin(), negs.end(), greater<int>());
-
-    int result = INT_MIN;
-    if (plus.size() >= 3) {
-        result = max(result, plus[0] * plus[1] * plus[2]);
-    }
-
-    if (plus.size() >= 1) {
-        result = max(result, plus[0] * negs[0] * negs[1]);
-    }
+    return 0;
 }
