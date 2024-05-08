@@ -29,6 +29,9 @@ int solution(string& S) {
         }
         else {
             char top = myStack.top();
+            if (myStack.size() == 0) {
+                return false;
+            }
             if (right[cur] == top) {
                 myStack.pop();
             }
