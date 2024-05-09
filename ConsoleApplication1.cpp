@@ -127,31 +127,18 @@ using namespace std;
 // you can write to stdout for debugging purposes, e.g.
 // cout << "this is a debug message" << endl;
 
+
 int solution(vector<int>& A) {
     // Implement your solution here
-    const int N = A.size();
-    vector<int> leftMin(N, 0);
-    vector<int> rightMax(N, 0);
-    int minV = INT_MAX;
-    //cout << "N=" << N << " " << leftMin.size() << " " << rightMax.size() << endl;
+    int N = A.size();
+    long long sum = 0;
+    long long maxSum = INT_MIN;
     for (int i = 0; i < N; i++) {
-        minV = min(minV, A[i]);
-        leftMin[i] = minV;
+        sum = sum + A[i];
+        maxSum = max(maxSum, sum);
+        if (sum < 0) {
+            sum = 0;
+        }
     }
-    //cout << "ok1" << endl;
-    int maxV = INT_MIN;
-    for (int i = N - 1; i >= 0; i--) {
-        //cout << "ok2 i =" << i << endl;
-        maxV = max(maxV, A[i]);
-        rightMax[i] = maxV;
-    }
-    //cout << "ok2b" << endl;
-    int profit = 0;
-    //cout << "ok3" << endl;
-    for (int i = 0; i < N - 1; i++) {
-        int low = leftMin[i];
-        int high = rightMax[i + 1];
-        profit = max(profit, high - low);
-    }
-    return profit;
+    return maxSum;
 }
