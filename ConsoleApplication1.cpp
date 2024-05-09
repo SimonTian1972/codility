@@ -186,10 +186,54 @@ using namespace std;
 
 using namespace std;
 
-int solution(vector<int>& A) {
-    unordered_map<int, int> numCount;
-    for (int num : A) {
-        numCount[abs(num)]++;
+void resetTable(bool* table, int M)
+{
+    for (int i = 0; i <= M; i++)
+    {
+        table[i] = false;
     }
-    return numCount.size();
+}
+
+int solution(int M, vector<int>& A) {
+    bool* seen = new bool[M + 1];
+
+    int front = 0;
+    int back = 0;
+    int total = 0;
+
+    resetTable(seen, M);
+
+    while (front < A.size() && back < A.size())
+    {
+        // move front foward as far as posiible
+        while (front < A.size() && seen[A[front]] == false)
+        {
+            seen[A[front]] = true;
+
+            // Add the number of toatal sequecnes:
+            // (A[back], A[front]), (A[back+1], A[front]), (A[back+2], A[front]) ..., (A[front], A[front])
+            total += front - back + 1;
+
+            if (total >= 1000000000)
+            {
+                return 1000000000;
+            }
+
+            // cout<< "+" << front- back + 1 << endl;
+            front++;
+        }
+
+        // move back to the dupicate value
+        while (front < A.size() && back < A.size() && A[back] != A[front])
+        {
+            seen[A[back]] = false; // reset
+            back++;
+        }
+
+        // make back to next number
+        seen[A[back]] = false;
+        back++;
+
+    }
+    return total;
 }
