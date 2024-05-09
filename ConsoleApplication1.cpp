@@ -81,7 +81,9 @@ int solution(vector<int>& H) {
             if (myStack.top() < H[i]) {
                 myStack.push(H[i]);
             }
-            else {
+            else if (myStack.top() == H[i]) {
+                continue;
+            } else {
                 bool keep = true;
                 while (myStack.empty() == false) {
                     int top = myStack.top();
