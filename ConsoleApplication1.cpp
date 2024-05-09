@@ -206,33 +206,31 @@ int solution(vector<int>& A) {
         return numPeaks; // No or only one peak, return as is
     }
 
-    int maxFlags = 1;
-    int minDist = ceil(sqrt(N)); // Minimum distance between flags
+    // Try all possible block sizes
+    for (int numBlock = numPeaks; numBlock >= 1; --numBlock) {
+        if (N % numBlock == 0) {
+            int blockSize = N / numBlock;
+            int peakIndex = 0;
 
-    // Binary search for the maximum number of flags
-    int left = 1, right = numPeaks;
-    while (left <= right) {
-        int mid = (left + right) / 2;
-        int flagsPlaced = 1;
-        int lastFlagPos = peaks[0]; // Place the first flag at the first peak
-
-        // Try to place the remaining flags
-        for (int i = 1; i < numPeaks; ++i) {
-            if (peaks[i] - lastFlagPos >= minDist) {
-                flagsPlaced++;
-                lastFlagPos = peaks[i];
+            // Check if it's possible to divide the array into blocks of size numBlock
+            for (int i = 0; i < numBlock; ++i) {
+                int blockStart = i * blockSize;
+                int blockEnd = blockStart + blockSize - 1;
+                auto it = lower_bound(peaks.begin(), peaks.end(), blockStart);
+                if (it != peaks.end()) {
+                    if (blockEnd >= *it) {
+                        peakIndex++;
+                    }
+                }
             }
-        }
 
-        if (flagsPlaced >= mid) {
-            maxFlags = max(maxFlags, mid);
-            left = mid + 1;
-        }
-        else {
-            right = mid - 1;
+            // If all blocks contain at least one peak, return the number of blocks
+            if (peakIndex == numPeaks) {
+                return numBlock;
+            }
         }
     }
 
-    return maxFlags;
+    return 0; // Not possible to divide the array into blocks
 }
 
