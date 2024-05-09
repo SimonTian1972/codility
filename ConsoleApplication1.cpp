@@ -68,34 +68,47 @@ using namespace std;
 #include <iostream>
 using namespace std;
 
-int solution(vector<int>& A, vector<int>& B) {
+int solution(vector<int>& H) {
     // Implement your solution here
-    const int len = A.size();
     stack<int> myStack;
+    const int N = H.size();
     int count = 0;
-    for (int i = 0; i < len; i++) {
-        if (B[i] == 1) { // push to stack donw stream
-            myStack.push(A[i]);
+    for (int i = 0; i < N; i++) {
+        if (myStack.empty()) {
+            myStack.push(H[i]);
         }
-        else { // up stream
-            if (myStack.empty()) {
-                count++;
+        else {
+            if (myStack.top() < H[i]) {
+                myStack.push(H[i]);
             }
             else {
+                bool keep = true;
                 while (myStack.empty() == false) {
                     int top = myStack.top();
-                    if (top > A[i]) {
+                    if (top > H[i]) {
+                        myStack.pop();
+                        count++;
+                        cout << "top= " << top << "count= " << count << "cur=" << H[i] << endl;
+                    }
+                    else if (top == H[i]) {
+                        myStack.pop();
+                        count++;
+                        keep = false;
+                        cout << "top= " << top << "count= " << count << "cur=" << H[i] << endl;
                         break;
                     }
-                    else {
-                        myStack.pop();
+                    else { // top < H[i]
+                        myStack.push(H[i]);
+                        break;
                     }
                 }
-                if (myStack.empty()) {
-                    count++;
+                if (myStack.empty() == true && keep == true) {
+                    myStack.push(H[i]);
                 }
             }
         }
     }
+    cout << "myStack.size()= " << myStack.size() << "count= " << count << endl;
+    cout << "top= " << myStack.top() << endl;
     return count + myStack.size();
 }
