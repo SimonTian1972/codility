@@ -225,7 +225,7 @@ int solution(vector<int>& A) {
             }
 
             // If all blocks contain at least one peak, return the number of blocks
-            if (peakIndex == numPeaks) {
+            if (peakIndex == numBlock) {
                 return numBlock;
             }
         }
