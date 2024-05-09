@@ -181,18 +181,58 @@ int solution(vector<int>& A) {
 using namespace std;
 
 
-int solution(int N) {
-    int minPerimeter = INT_MAX; // Initialize with maximum possible value
+#include <vector>
+#include <cmath>
 
-    for (int i = 1; i * i <= N; ++i) {
-        if (N % i == 0) {
-            int factor1 = i;
-            int factor2 = N / i;
-            int perimeter = 2 * (factor1 + factor2);
+using namespace std;
 
-            minPerimeter = std::min(minPerimeter, perimeter);
+bool hasPeak(const vector<int>& A, int index) {
+    return index > 0 && index < A.size() - 1 && A[index] > A[index - 1] && A[index] > A[index + 1];
+}
+
+int solution(vector<int>& A) {
+    int N = A.size();
+    vector<int> peaks;
+
+    // Find all peaks
+    for (int i = 1; i < N - 1; ++i) {
+        if (hasPeak(A, i)) {
+            peaks.push_back(i);
         }
     }
 
-    return minPerimeter;
+    int numPeaks = peaks.size();
+    if (numPeaks <= 1) {
+        return numPeaks; // No or only one peak, return as is
+    }
+
+    int maxFlags = 1;
+    int minDist = ceil(sqrt(N)); // Minimum distance between flags
+
+    // Binary search for the maximum number of flags
+    int left = 1, right = numPeaks;
+    while (left <= right) {
+        int mid = (left + right) / 2;
+        int flagsPlaced = 1;
+        int lastFlagPos = peaks[0]; // Place the first flag at the first peak
+
+        // Try to place the remaining flags
+        for (int i = 1; i < numPeaks; ++i) {
+            if (peaks[i] - lastFlagPos >= minDist) {
+                flagsPlaced++;
+                lastFlagPos = peaks[i];
+            }
+        }
+
+        if (flagsPlaced >= mid) {
+            maxFlags = max(maxFlags, mid);
+            left = mid + 1;
+        }
+        else {
+            right = mid - 1;
+        }
+    }
+
+    return maxFlags;
 }
+
