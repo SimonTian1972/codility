@@ -180,57 +180,39 @@ int solution(vector<int>& A) {
 #include <iostream>
 using namespace std;
 
-
 #include <vector>
+#include <unordered_map>
 #include <cmath>
 
 using namespace std;
 
-bool hasPeak(const vector<int>& A, int index) {
-    return index > 0 && index < A.size() - 1 && A[index] > A[index - 1] && A[index] > A[index + 1];
-}
-
-int solution(vector<int>& A) {
+vector<int> solution(vector<int>& A) {
     int N = A.size();
-    vector<int> peaks;
+    vector<int> result(N, 0);
 
-    // Find all peaks
-    for (int i = 1; i < N - 1; ++i) {
-        if (hasPeak(A, i)) {
-            peaks.push_back(i);
-        }
-    }
+    // Step 1: Count the frequency of each element
+    unordered_map<int, int> frequency;
+    for (int num : A)
+        frequency[num]++;
 
-    int numPeaks = peaks.size();
-    if (numPeaks <= 1) {
-        return numPeaks; // No or only one peak, return as is
-    }
+    // Step 2 & 3: Count divisors and deduce non-divisors count
+    for (int i = 0; i < N; i++) {
+        int num = A[i];
+        int divisors = 0;
 
-    // Try all possible block sizes
-    for (int numBlock = numPeaks; numBlock >= 1; --numBlock) {
-        if (N % numBlock == 0) {
-            int blockSize = N / numBlock;
-            int peakIndex = 0;
-
-            // Check if it's possible to divide the array into blocks of size numBlock
-            for (int i = 0; i < numBlock; ++i) {
-                int blockStart = i * blockSize;
-                int blockEnd = blockStart + blockSize - 1;
-                auto it = lower_bound(peaks.begin(), peaks.end(), blockStart);
-                if (it != peaks.end()) {
-                    if (blockEnd >= *it) {
-                        peakIndex++;
-                    }
-                }
-            }
-
-            // If all blocks contain at least one peak, return the number of blocks
-            if (peakIndex == numBlock) {
-                return numBlock;
+        // Find divisors
+        for (int j = 1; j <= sqrt(num); j++) {
+            if (num % j == 0) {
+                divisors += frequency[j]; // Count divisors
+                if (num / j != j)       // Avoid double counting for perfect squares
+                    divisors += frequency[num / j];
             }
         }
+
+        // Deduce non-divisors count
+        result[i] = N - divisors;
     }
 
-    return 0; // Not possible to divide the array into blocks
+    return result;
 }
 
