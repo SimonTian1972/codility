@@ -182,22 +182,17 @@ using namespace std;
 
 
 int solution(int N) {
-    int factors = 0;
-    int sqrtN = sqrt(N);
+    int minPerimeter = INT_MAX; // Initialize with maximum possible value
 
-    for (int i = 1; i <= sqrtN; ++i) {
+    for (int i = 1; i * i <= N; ++i) {
         if (N % i == 0) {
-            // If i is a divisor, increment the count by 2
-            // One for i, and one for N / i (pairing)
-            factors += 2;
+            int factor1 = i;
+            int factor2 = N / i;
+            int perimeter = 2 * (factor1 + factor2);
+
+            minPerimeter = std::min(minPerimeter, perimeter);
         }
     }
 
-    // If N is a perfect square, decrement the count by 1
-    // to avoid counting the square root twice
-    if (sqrtN * sqrtN == N) {
-        factors -= 1;
-    }
-
-    return factors;
+    return minPerimeter;
 }
