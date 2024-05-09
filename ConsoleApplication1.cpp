@@ -86,74 +86,68 @@ using namespace std;
 #include <iostream>
 using namespace std;
 
-int solution(vector<int>& H) {
+
+
+int solution(vector<int>& A) {
     // Implement your solution here
-    stack<int> myStack;
-    const int N = H.size();
-    int count = 0;
-    for (int i = 0; i < N; i++) {
-        if (myStack.empty()) {
-            myStack.push(H[i]);
-        }
-        else {
-            if (myStack.top() < H[i]) {
-                myStack.push(H[i]);
-            }
-            else if (myStack.top() == H[i]) {
-                continue;
-            }
-            else {
+    unordered_map<int, vector<int>> myMap; // num, count
+    for (int i = 0; i < A.size(); i++) {
+        myMap[A[i]].push_back(i);
+    }
 
-                while (myStack.empty() == false) {
-                    int top = myStack.top();
-                    if (top > H[i]) {
-                        myStack.pop();
-                        count++;
-                        //cout << "top= " << top << "count= " << count << "cur=" << H[i] << endl;
-                    }
-                    else if (top == H[i]) {
-                        break; // drop cur
-                        //cout << "top= " << top << "count= " << count << "cur=" << H[i] << endl;
-                        break;
-                    }
-                    else { // top < H[i]
-                        myStack.push(H[i]);
-                        break;
-                    }
-                }
-                if (myStack.empty() == true) {
-                    myStack.push(H[i]);
-                }
-
-            }
+    int largest = 0;
+    int idx = -1;
+    for (auto myPair : myMap) {
+        if (myPair.second.size() > largest) {
+            largest = myPair.second.size();
+            idx = myPair.second[0];
         }
     }
-    //cout << "myStack.size()= " << myStack.size() << "count= " << count << endl;
-    //cout << "top= " << myStack.top() << endl;
-    return count + myStack.size();
+
+    const int N = A.size();
+    if (largest > N / 2) {
+        return idx;
+    }
+    else {
+        return -1;
+    }
 }
 
-#include <iostream>
+// cout << "this is a debug message" << endl;
+#include <map>
+#include <unordered_map>
 #include <vector>
+#include <set>
+#include <unordered_set>
+#include <climits>
+#include <unordered_map>
+#include <algorithm>
 #include <stack>
+#include <iostream>
+using namespace std;
 
-int solution(std::vector<int>& H) {
-    std::stack<int> myStack;
-    int count = 0;
-    for (int height : H) {
-        while (!myStack.empty() && myStack.top() > height) {
-            myStack.pop();
-            count++;
-        }
-        if (myStack.empty() || myStack.top() < height) {
-            myStack.push(height);
+int solution(vector<int>& A) {
+    // Implement your solution here
+    unordered_map<int, vector<int>> myMap; // num, count
+    for (unsigned int i = 0; i < A.size(); i++) {
+        myMap[A[i]].push_back(i);
+    }
+
+    unsigned int largest = 0;
+    int idx = -1;
+    for (auto myPair : myMap) {
+        if (myPair.second.size() > largest) {
+            largest = myPair.second.size();
+            idx = myPair.second[0];
         }
     }
-    return count + myStack.size();
+
+    const unsigned int N = A.size();
+    if (largest > N / 2) {
+        return idx;
+    }
+    else {
+        return -1;
+    }
 }
 
-int main() {
-    std::vector<int> H = { 8, 8, 5, 7, 9, 8, 7, 4, 8 };
-    std::cout << "Minimum number of blocks needed: " << solution(H) << std::endl;
-    return 0;
-}
