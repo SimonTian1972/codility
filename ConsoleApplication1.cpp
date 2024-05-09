@@ -186,33 +186,10 @@ using namespace std;
 
 using namespace std;
 
-vector<int> solution(vector<int>& A) {
-    int N = A.size();
-    vector<int> result(N, 0);
-
-    // Step 1: Count the frequency of each element
-    unordered_map<int, int> frequency;
-    for (int num : A)
-        frequency[num]++;
-
-    // Step 2 & 3: Count divisors and deduce non-divisors count
-    for (int i = 0; i < N; i++) {
-        int num = A[i];
-        int divisors = 0;
-
-        // Find divisors
-        for (int j = 1; j <= sqrt(num); j++) {
-            if (num % j == 0) {
-                divisors += frequency[j]; // Count divisors
-                if (num / j != j)       // Avoid double counting for perfect squares
-                    divisors += frequency[num / j];
-            }
-        }
-
-        // Deduce non-divisors count
-        result[i] = N - divisors;
+int solution(vector<int>& A) {
+    unordered_map<int, int> numCount;
+    for (int num : A) {
+        numCount[abs(num)]++;
     }
-
-    return result;
+    return numCount.size();
 }
-
