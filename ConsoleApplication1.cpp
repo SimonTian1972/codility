@@ -80,14 +80,14 @@ int solution(vector<int>& A) {
 
 
 
-
-int solution(vector<int>& A) {
+// correct finally
+int solution(vector<int>& A) { 
     // Implement your solution here
     const int N = A.size();
 
     sort(A.begin(), A.end());
     int ret = INT_MAX;
-    for (int i = 0; i < N - 1; i++) {
+    for (int i = 0; i < N; i++) {
         int target = -A[i];
         auto it = lower_bound(A.begin() + i, A.end(), target);
 
