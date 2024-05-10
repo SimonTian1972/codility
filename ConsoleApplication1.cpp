@@ -27,44 +27,63 @@ using namespace std;
 #include <iostream>
 using namespace std;
 
-int minSum(vector<int>& A, int first, int nextPos) {
-    int len = nextPos - first + 1;
-    vector<int> dp(len, 0);
-    for (int i = first; i <= nextPos; i++) {
-        int idx = i - first;
-        int maxCur = INT_MIN;
-        for (int step = 1; step <= 6; step++) {
-            int prev = 0;
-            if (idx - step >= 0) {
-                prev = dp[idx - step];
-            }
-            maxCur = max(maxCur, prev + A[i]);
-        }
-        dp[idx] = maxCur;
+int solution(vector<int>& A) {
+    // Implement your solution here
+    const int N = A.size();
+    int minPos = -1;
+    double minVal = INT_MAX;
+    vector<int> sums(N, 0);
+    int sum = 0;
+    for (int i = 0; i < N; i++) {
+        sum = sum + A[i];
+        sums[i] = sum;
     }
-    return dp[len - 1] - A[nextPos];// do not count nextPos value
+    for (int i = 0; i < N; i++) {
+        for (int j = i + 1; j < N; j++) {
+            double temp = static_cast<double>(sums[j] - sums[i] +A[i]) / (j - i + 1);
+            if (temp < minVal) {
+                minVal = temp;
+                minPos = i;
+            }
+        }
+    }
+    return minPos;
 }
+
+
 
 int solution(vector<int>& A) {
     // Implement your solution here
     const int N = A.size();
-    int idx = 0;
+    int minPos = -1;
+    double minVal = INT_MAX;
+    vector<int> sums(N, 0);
     int sum = 0;
-    while (idx < N) {
-        if (idx == 0 || idx == N - 1 || A[idx] >= 0) {
-            sum = sum + A[idx];
-            idx++;
-            continue;
-        }
-        else { // A[idx] < 0
-            int nextPos = idx;
-            while (A[nextPos] < 0 && nextPos != N - 1) {
-                nextPos++;
+    for (int i = 0; i < N; i++) {
+        sum = sum + A[i];
+        sums[i] = sum;
+    }
+    for (int i = 0; i < N; i++) {
+        for (int j = i + 1; j < N; j++) {
+            double temp = static_cast<double>(sums[j] - sums[i] + A[i]) / (j - i + 1);
+            if (temp < minVal) {
+                minVal = temp;
+                minPos = i;
             }
-            int temp = minSum(A, idx, nextPos);
-            sum = sum + temp;
-            idx = nextPos;
         }
     }
-    return sum;
+    return minPos;
 }
+
+
+Example test : [4, 2, 2, 5, 1, 5, 8]
+OK
+
+Your test case: [-2, 4]
+    Returned value : 0
+
+Your test case: [2, 3, -4, 6, -4, 4]
+    Returned value : 2
+
+Your test case: [-10000, -10000, -10000, 10000]
+    Returned value : 0
