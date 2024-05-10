@@ -84,20 +84,22 @@ int solution(vector<int>& A) {
 int solution(vector<int>& A) {
     // Implement your solution here
     const int N = A.size();
-    if (N == 1) {
-        return 2 * abs(A[0]);
-    }
+
     sort(A.begin(), A.end());
     int ret = INT_MAX;
     for (int i = 0; i < N - 1; i++) {
         int target = -A[i];
         auto it = lower_bound(A.begin() + i, A.end(), target);
-        if (it != A.end()) {
-            ret = min(ret, abs(*it - target));
-        }
-        if (it != A.begin() + i) {
-            auto pv = std::prev(it, 1);
+
+        if (it == A.end()) {
+            auto pv = A.rbegin();
             ret = min(ret, abs(*pv - target));
+        } else {
+            ret = min(ret, abs(*it - target));
+            if (it != A.begin()) {
+                auto pv = prev(it);
+                ret = min(ret, abs(*pv - target));
+            }
         }
     }
     return ret;
