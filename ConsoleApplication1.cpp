@@ -16,236 +16,60 @@ using namespace std;
 // you can write to stdout for debugging purposes, e.g.
 // cout << "this is a debug message" << endl;
 
-
-#include <iostream>
-#include <vector>
-#include <algorithm>
-
-using namespace std;
-
-#include <iostream>
-#include <vector>
-#include <algorithm>
-
-using namespace std;
-
-// you can use includes, for example:
-// #include <algorithm>
-
-// you can write to stdout for debugging purposes, e.g.
-// cout << "this is a debug message" << endl;
-#include <map>
-#include <unordered_map>
-#include <vector>
-#include <set>
-#include <unordered_set>
-#include <climits>
-#include <unordered_map>
-#include <algorithm>
-#include <stack>
-#include <iostream>
-using namespace std;
-
-
-
-#include <vector>
-#include <algorithm>
-
-// you can use includes, for example:
-// #include <algorithm>
-
-// you can write to stdout for debugging purposes, e.g.
-// cout << "this is a debug message" << endl;
-#include <map>
-#include <unordered_map>
-#include <vector>
-#include <set>
-#include <unordered_set>
-#include <climits>
-#include <unordered_map>
-#include <algorithm>
-#include <stack>
-#include <iostream>
-using namespace std;
-
-
-// you can use includes, for example:
-// #include <algorithm>
-
-// you can write to stdout for debugging purposes, e.g.
-// cout << "this is a debug message" << endl;
-#include <map>
-#include <unordered_map>
-#include <vector>
-#include <set>
-#include <unordered_set>
-#include <climits>
-#include <unordered_map>
-#include <algorithm>
-#include <stack>
-#include <iostream>
-using namespace std;
-
-
-
-
-
-// cout << "this is a debug message" << endl;
-#include <map>
-#include <unordered_map>
-#include <vector>
-#include <set>
-#include <unordered_set>
-#include <climits>
-#include <unordered_map>
-#include <algorithm>
-#include <stack>
-#include <iostream>
-using namespace std;
-
-
-
-// cout << "this is a debug message" << endl;
-#include <map>
-#include <unordered_map>
-#include <vector>
-#include <set>
-#include <unordered_set>
-#include <climits>
-#include <unordered_map>
-#include <algorithm>
-#include <stack>
-#include <iostream>
-#include <cmath>
-using namespace std;
-
-
-void resetTable(bool* table, int M)
-{
-    for (int i = 0; i <= M; i++)
-    {
-        table[i] = false;
-    }
-}
-
-int solution(int M, vector<int>& A) {
-    bool* seen = new bool[M + 1];
-
-    int front = 0;
-    int back = 0;
-    int total = 0;
-
-    resetTable(seen, M);
-
-    while (front < A.size() && back < A.size())
-    {
-        // move front foward as far as posiible
-        while (front < A.size() && seen[A[front]] == false)
-        {
-            seen[A[front]] = true;
-
-            // Add the number of toatal sequecnes:
-            // (A[back], A[front]), (A[back+1], A[front]), (A[back+2], A[front]) ..., (A[front], A[front])
-            total += front - back + 1;
-
-            if (total >= 1000000000)
-            {
-                return 1000000000;
+int solution(vector<int>& A) {
+    // Implement your solution here
+    const int N = A.size();
+    sort(A.begin(), A.end(), greater<int>());
+    int count = 0;
+    for (int front = 0; front < N-2; front++) {
+        for (int back1 = front + 1; back1 < N - 1; back1++) {
+            for (int back2 = back1 + 1; back2 < N; back2++) {
+                if (A[back1] + A[back2] > A[front]) {
+                    count++;
+                }
             }
-
-            // cout<< "+" << front- back + 1 << endl;
-            front++;
         }
-
-        // move back to the dupicate value
-        while (front < A.size() && back < A.size() && A[back] != A[front])
-        {
-            seen[A[back]] = false; // reset
-            back++;
-        }
-
-        // make back to next number
-        seen[A[back]] = false;
-        back++;
 
     }
-    return total;
+    return count;
 }
 
-
-#include <vector>
-#include <unordered_set>
-#include <iostream>
-
-using namespace std;
-
-int solution(int M, vector<int>& A) {
-    unordered_set<int> seen;
-    int front = 0, back = 0, total = 0;
-
-    auto resetTable = [&seen]() {
-        seen.clear();
-    };
-
-    while (front < A.size() && back < A.size()) {
-        while (front < A.size() && seen.find(A[front]) == seen.end()) {
-            seen.insert(A[front]);
-            total += front - back + 1;
-
-            if (total >= 1000000000) {
-                return 1000000000;
-            }
-
-            front++;
+int solution(vector<int>& A) {
+    // Implement your solution here
+    const int N = A.size();
+    sort(A.begin(), A.end(), greater<int>());
+    int count = 0;
+    for (int front = 0; front < N - 2; front++) {
+        for (int back1 = front + 1; back1 < N - 1; back1++) {
+            // find back2 such back1+back2 <= front
+            int target = A[front] - A[back1];
+            auto it = find_if(A.begin() + back1 + 1, A.end(), [target](int val) {
+                return val < target;
+                });
+            int temp = distance(A.begin() + back1 + 1, it);
+            cout << "temp = " << temp << endl;
+            count += temp;
         }
-
-        while (front < A.size() && back < A.size() && A[back] != A[front]) {
-            seen.erase(A[back]);
-            back++;
-        }
-
-        seen.erase(A[back]);
-        back++;
     }
-
-    return total;
+    return count;
 }
 
-
-#include <vector>
-#include <iostream>
-
-using namespace std;
-
-int solution(int M, vector<int>& A) {
-    vector<bool> seen(M + 1, false);
-    int front = 0, back = 0, total = 0;
-
-    auto resetTable = [&seen]() {
-        fill(seen.begin(), seen.end(), false);
-    };
-
-    while (front < A.size() && back < A.size()) {
-        while (front < A.size() && !seen[A[front]]) {
-            seen[A[front]] = true;
-            total += front - back + 1;
-
-            if (total >= 1000000000) {
-                return 1000000000;
-            }
-
-            front++;
+int solution(vector<int>& A) {
+    // Implement your solution here
+    const int N = A.size();
+    sort(A.begin(), A.end(), greater<int>());
+    int count = 0;
+    for (int front = 0; front < N - 2; front++) {
+        for (int back1 = front + 1; back1 < N - 1; back1++) {
+            // find back2 such back1+back2 <= front
+            int target = A[front] - A[back1];
+            auto it = find_if(A.begin() + back1 + 1, A.end(), [target](int val) {
+                return val <= target;
+                });
+            int temp = distance(A.begin() + back1 + 1, it);
+            //cout << "temp = " << temp << endl;
+            count += temp;
         }
-
-        while (front < A.size() && back < A.size() && A[back] != A[front]) {
-            seen[A[back]] = false;
-            back++;
-        }
-
-        seen[A[back]] = false;
-        back++;
     }
-
-    return total;
+    return count;
 }
-
