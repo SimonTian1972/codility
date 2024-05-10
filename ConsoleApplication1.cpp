@@ -15,61 +15,43 @@ using namespace std;
 
 // you can write to stdout for debugging purposes, e.g.
 // cout << "this is a debug message" << endl;
-
 int solution(vector<int>& A) {
     // Implement your solution here
     const int N = A.size();
-    sort(A.begin(), A.end(), greater<int>());
-    int count = 0;
-    for (int front = 0; front < N-2; front++) {
-        for (int back1 = front + 1; back1 < N - 1; back1++) {
-            for (int back2 = back1 + 1; back2 < N; back2++) {
-                if (A[back1] + A[back2] > A[front]) {
-                    count++;
-                }
-            }
+    sort(A.begin(), A.end());
+    int ret = INT_MAX;
+    for (int i = 0; i < N - 1; i++) {
+        int target = -A[i];
+        auto it = lower_bound(A.begin()+i, A.end(), target);
+        if (it != A.end()) {
+            ret = min(ret, abs(*it - target));
         }
-
+        if (it != A.begin() + i) {
+            auto pv = std::prev(it, 1);
+            ret = min(ret, abs(*pv - target));
+        }
     }
-    return count;
+    return ret;
 }
 
 int solution(vector<int>& A) {
     // Implement your solution here
     const int N = A.size();
-    sort(A.begin(), A.end(), greater<int>());
-    int count = 0;
-    for (int front = 0; front < N - 2; front++) {
-        for (int back1 = front + 1; back1 < N - 1; back1++) {
-            // find back2 such back1+back2 <= front
-            int target = A[front] - A[back1];
-            auto it = find_if(A.begin() + back1 + 1, A.end(), [target](int val) {
-                return val < target;
-                });
-            int temp = distance(A.begin() + back1 + 1, it);
-            cout << "temp = " << temp << endl;
-            count += temp;
+    if (N == 1) {
+        return 2 * A[0];
+    }
+    sort(A.begin(), A.end());
+    int ret = INT_MAX;
+    for (int i = 0; i < N - 1; i++) {
+        int target = -A[i];
+        auto it = lower_bound(A.begin() + i, A.end(), target);
+        if (it != A.end()) {
+            ret = min(ret, abs(*it - target));
+        }
+        if (it != A.begin() + i) {
+            auto pv = std::prev(it, 1);
+            ret = min(ret, abs(*pv - target));
         }
     }
-    return count;
-}
-
-int solution(vector<int>& A) {
-    // Implement your solution here
-    const int N = A.size();
-    sort(A.begin(), A.end(), greater<int>());
-    int count = 0;
-    for (int front = 0; front < N - 2; front++) {
-        for (int back1 = front + 1; back1 < N - 1; back1++) {
-            // find back2 such back1+back2 <= front
-            int target = A[front] - A[back1];
-            auto it = find_if(A.begin() + back1 + 1, A.end(), [target](int val) {
-                return val <= target;
-                });
-            int temp = distance(A.begin() + back1 + 1, it);
-            //cout << "temp = " << temp << endl;
-            count += temp;
-        }
-    }
-    return count;
+    return ret;
 }
