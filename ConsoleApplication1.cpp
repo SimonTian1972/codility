@@ -75,6 +75,10 @@ B[K] ≤ B[K + 1], for each K (0 ≤ K < N − 1).
 #include <vector>
 #include <algorithm>
 
+// notice that only "adjacent ropes" can be tied
+      // so, the problem is simple; we can use "greedy" method
+
+
 int solution(int K, std::vector<int>& A) {
     int count = 0;
     int currentLength = 0;
