@@ -92,5 +92,48 @@ def solution(A) :
 # Test the function
 print(solution([3, 2, 6, -1, 4, 5, -1, 2]))  # Output should be 17
 
+def ok(A,B,C,mid):
+    # count values in C
+    cnt=[0]*(2*len(C)+1)
+    for i in C[:mid+1]: cnt[i]+=1
+    
+    # prefix sum: accumulate sum of cnt
+    for i in range(1,len(cnt)): cnt[i]+=cnt[i-1]
+    # if sum between A[i]~B[i] is 0, then plank i can not be covered
+    for a,b in zip(A,B):
+        if cnt[b]==cnt[a-1]: return False
+    return True
+
+This is a function named ok that checks if it's possible to nail all planks using a certain number of nails up to the mid-th nail in the list C. It returns True if it's possible, and False otherwise.
+A, B, and C are lists representing the start positions, end positions, and nail positions respectively.
+It initializes a list cnt with zeros, with a length of 2 * len(C) + 1. This list is used to count how many nails are present between each position.
+It iterates through the first mid+1 elements of list C and increments the count in cnt for each nail position encountered.
+It then performs prefix sum computation on cnt to get cumulative counts.
+It iterates through pairs of elements from lists A and B simultaneously using zip, and checks whether the sum of counts of nails between positions a and b is equal. If it is, it means a plank cannot be covered, and the function returns False.
+If the loop completes without finding any plank that cannot be covered, the function returns True.
+
+def solution(A, B, C):
+    # binary search
+    res=float('inf')
+    lo,hi=0,len(C)-1
+    while lo<=hi:
+        mid=(lo+hi)//2
+        if ok(A,B,C,mid):
+            res=min(res,mid+1)
+            hi=mid-1
+        else:
+            lo=mid+1
+    return res if res!=float('inf') else -1
+
+
+This is the main function named solution that finds the minimum number of nails required to nail all planks.
+It initializes res to positive infinity, which will store the minimum number of nails required.
+It sets lo and hi as the low and high boundaries of the binary search respectively.
+It iteratively performs binary search on the list C to find the minimum number of nails required.
+Inside the loop, it calculates the middle index mid.
+It checks if it's possible to nail all planks using the first mid+1 nails in the list C by calling the ok function.
+If it's possible, it updates res with the minimum of its current value and mid+1, and sets hi to mid-1.
+If it's not possible, it sets lo to mid+1.
+Finally, it returns the minimum number of nails required (res), or -1 if it's not possible to nail all planks.
 
 
