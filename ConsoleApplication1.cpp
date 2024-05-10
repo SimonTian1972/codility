@@ -12,84 +12,88 @@ using namespace std;
 
 // you can use includes, for example:
 // #include <algorithm>
+int solution(vector<int>& A, vector<int>& B, vector<int>& C) {
+    // Implement your solution here
+    set<vector<int>> myPlank;
+    const int N = A.size();
+    for (int i = 0; i < N; i++) {
+        myPlank.insert(vector<int>{A[i], B[i]});
+    }
 
-#include <iostream>
+    const int cN = C.size();
+    for (int i = 0; i < cN; i++) {
+        auto itEnd = upper_bound(myPlank.begin(), myPlank.end(), vector<int>{C[i], 0},
+            [](vector<int>left, vector<int>right) {
+                return left[0] < right[0];
+            });
+        vector<vector<int>> toRemove;
+        for (auto it = myPlank.begin(); it != myPlank.end() && it != itEnd; it++) {
+            // save item to remove
+            int end = (*it)[1];
+            if (end >= C[i]) {
+                toRemove.push_back(vector<int>{(*it)[0], (*it)[1]});
+            }
+        }
+        // remove items
+        for (auto item : toRemove) {
+            myPlank.erase(item);
+        }
+        if (myPlank.empty()) {
+            return i+1; // number of nails
+        }
+    }
+    return -1;
+}
+
+// you can use includes, for example:
+// #include <algorithm>
+
+// you can write to stdout for debugging purposes, e.g.
+// cout << "this is a debug message" << endl;
+
+// you can use includes, for example:
+// #include <algorithm>
+#include <map>
+#include <unordered_map>
 #include <vector>
-#include <iterator>
+#include <set>
+#include <unordered_set>
+#include <climits>
+#include <unordered_map>
+#include <algorithm>
+#include <stack>
+#include <iostream>
+using namespace std;
 
-
-bool blocksEnough(vector<int>& A, int max, int K)
-{
-    int block = 1;
-    int sum = 0;
-    int size = (int)A.size();
-
-    // check if the blocks are enough (less than or equal to K)
-    for (int i = 0; i < size; i++)
-    {
-        if (sum + A[i] <= max)
-        {
-            sum += A[i];
-        }
-        else
-        {
-            // The sum in this block is larger than max, so add a new block to add A[i].
-            // cout<< block << ":" << sum << endl;
-            block++;
-            sum = A[i];
-        }
-
-        // If number of blocks is larger than K, return false
-        if (block > K)
-        {
-            return false;
-        }
+int solution(vector<int>& A, vector<int>& B, vector<int>& C) {
+    // Implement your solution here
+    set<vector<int>> myPlank;
+    const int N = A.size();
+    for (int i = 0; i < N; i++) {
+        myPlank.insert(vector<int>{A[i], B[i]});
     }
 
-    return true;
+    const int cN = C.size();
+    for (int i = 0; i < cN; i++) {
+        auto itEnd = upper_bound(myPlank.begin(), myPlank.end(), vector<int>{C[i], 0},
+            [](vector<int>left, vector<int>right) {
+                return left[0] < right[0];
+            });
+        vector<vector<int>> toRemove;
+        for (auto it = myPlank.begin(); it != myPlank.end() && it != itEnd; it++) {
+            // save item to remove
+            int end = (*it)[1];
+            if (end >= C[i]) {
+                toRemove.push_back(vector<int>{(*it)[0], (*it)[1]});
+            }
+        }
+        // remove items
+        for (auto item : toRemove) {
+            myPlank.erase(item);
+        }
+        if (myPlank.empty()) {
+            return i + 1; // number of nails
+        }
+    }
+    return -1;
 }
-
-int solution(int K, int M, vector<int>& A)
-{
-    int max = 0;
-    int min = 0;
-    int size = (int)A.size();
-
-    // get the sum of vector, which is set to the upperbound
-    vector<int>::iterator it;
-    for (it = A.begin(); it != A.end(); it++)
-    {
-        max += *it;
-    }
-
-    // get maximum value in the vector, which is set to the lowerbound
-    min = *max_element(A.begin(), A.end());
-
-    // handle special case
-    if (K >= size)
-    {
-        return min;
-    }
-    else if (K == 1)
-    {
-        return max;
-    }
-
-    // do binary search
-    while (min <= max)
-    {
-        int mid = (min + max) / 2;
-
-        if (blocksEnough(A, mid, K))
-        {
-            max = mid - 1;
-        }
-        else
-        {
-            min = mid + 1;
-        }
-    }
-
-    return min;
-}
-
