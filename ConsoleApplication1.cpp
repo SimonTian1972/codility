@@ -13,96 +13,83 @@ using namespace std;
 // you can use includes, for example:
 // #include <algorithm>
 
-// you can write to stdout for debugging purposes, e.g.
-// cout << "this is a debug message" << endl;
-int solution(vector<int>& A) {
-    // Implement your solution here
-    const int N = A.size();
-    sort(A.begin(), A.end());
-    int ret = INT_MAX;
-    for (int i = 0; i < N - 1; i++) {
-        int target = -A[i];
-        auto it = lower_bound(A.begin()+i, A.end(), target);
-        if (it != A.end()) {
-            ret = min(ret, abs(*it - target));
+#include <iostream>
+#include <vector>
+#include <iterator>
+
+
+bool blocksEnough(vector<int>& A, int max, int K)
+{
+    int block = 1;
+    int sum = 0;
+    int size = (int)A.size();
+
+    // check if the blocks are enough (less than or equal to K)
+    for (int i = 0; i < size; i++)
+    {
+        if (sum + A[i] <= max)
+        {
+            sum += A[i];
         }
-        if (it != A.begin() + i) {
-            auto pv = std::prev(it, 1);
-            ret = min(ret, abs(*pv - target));
+        else
+        {
+            // The sum in this block is larger than max, so add a new block to add A[i].
+            // cout<< block << ":" << sum << endl;
+            block++;
+            sum = A[i];
+        }
+
+        // If number of blocks is larger than K, return false
+        if (block > K)
+        {
+            return false;
         }
     }
-    return ret;
+
+    return true;
 }
 
-int solution(vector<int>& A) {
-    // Implement your solution here
-    const int N = A.size();
-    if (N == 1) {
-        return 2 * A[0];
+int solution(int K, int M, vector<int>& A)
+{
+    int max = 0;
+    int min = 0;
+    int size = (int)A.size();
+
+    // get the sum of vector, which is set to the upperbound
+    vector<int>::iterator it;
+    for (it = A.begin(); it != A.end(); it++)
+    {
+        max += *it;
     }
-    sort(A.begin(), A.end());
-    int ret = INT_MAX;
-    for (int i = 0; i < N - 1; i++) {
-        int target = -A[i];
-        auto it = lower_bound(A.begin() + i, A.end(), target);
-        if (it != A.end()) {
-            ret = min(ret, abs(*it - target));
+
+    // get maximum value in the vector, which is set to the lowerbound
+    min = *max_element(A.begin(), A.end());
+
+    // handle special case
+    if (K >= size)
+    {
+        return min;
+    }
+    else if (K == 1)
+    {
+        return max;
+    }
+
+    // do binary search
+    while (min <= max)
+    {
+        int mid = (min + max) / 2;
+
+        if (blocksEnough(A, mid, K))
+        {
+            max = mid - 1;
         }
-        if (it != A.begin() + i) {
-            auto pv = std::prev(it, 1);
-            ret = min(ret, abs(*pv - target));
+        else
+        {
+            min = mid + 1;
         }
     }
-    return ret;
+
+    return min;
 }
-
-int solution(vector<int>& A) {
-    // Implement your solution here
-    const int N = A.size();
-    if (N == 1) {
-        return 2 * A[0];
-    }
-    sort(A.begin(), A.end());
-    int ret = INT_MAX;
-    for (int i = 0; i < N - 1; i++) {
-        int target = -A[i];
-        auto it = lower_bound(A.begin() + i, A.end(), target);
-        if (it != A.end()) {
-            ret = min(ret, abs(*it - target));
-        }
-        if (it != A.begin() + i) {
-            auto pv = std::prev(it, 1);
-            ret = min(ret, abs(*pv - target));
-        }
-    }
-    return ret;
-}
-
-
-
-// correct finally
-int solution(vector<int>& A) { 
-    // Implement your solution here
-    const int N = A.size();
-
-    sort(A.begin(), A.end());
-    int ret = INT_MAX;
-    for (int i = 0; i < N; i++) {
-        int target = -A[i];
-        auto it = lower_bound(A.begin() + i, A.end(), target);
-
-        if (it == A.end()) {
-            auto pv = A.rbegin();
-            ret = min(ret, abs(*pv - target));
-        } else {
-            ret = min(ret, abs(*it - target));
-            if (it != A.begin()) {
-                auto pv = prev(it);
-                ret = min(ret, abs(*pv - target));
-            }
-        }
-    }
-    return ret;
-}
-
 
