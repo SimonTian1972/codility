@@ -72,19 +72,21 @@ A[I] ≤ B[I], for each I (0 ≤ I < N);
 B[K] ≤ B[K + 1], for each K (0 ≤ K < N − 1).
 */
 
-int solution(vector<int>& A, vector<int>& B) {
-    // Implement your solution here
-    const int N = A.size();
-    int cur = 0;
+#include <vector>
+#include <algorithm>
+
+int solution(int K, std::vector<int>& A) {
     int count = 0;
-    while (cur < N) {
-        int end = B[cur];
-        count++;
-        int next = cur + 1;
-        while (next < N && A[next] <= end) {
-            next++;
+    int currentLength = 0;
+
+    for (int i = 0; i < A.size(); ++i) {
+        currentLength += A[i];
+        if (currentLength >= K) {
+            count++;
+            currentLength = 0;
         }
-        cur = next;
     }
+
     return count;
 }
+
