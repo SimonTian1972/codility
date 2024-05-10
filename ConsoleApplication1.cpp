@@ -103,68 +103,6 @@ using namespace std;
 #include <iostream>
 using namespace std;
 
-// you can use includes, for example:
-// #include <algorithm>
-
-// you can write to stdout for debugging purposes, e.g.
-// cout << "this is a debug message" << endl;
-
-#include <map>
-#include <unordered_map>
-#include <vector>
-#include <set>
-#include <unordered_set>
-#include <climits>
-#include <unordered_map>
-#include <algorithm>
-#include <stack>
-#include <iostream>
-using namespace std;
-
-// you can use includes, for example:
-// #include <algorithm>
-
-// you can write to stdout for debugging purposes, e.g.
-// cout << "this is a debug message" << endl;
-
-
-
-
-
-int solution(vector<int>& A) {
-    // Implement your solution here
-    const int N = A.size();
-    long long smallSum = 0;
-    vector<long long> leftSum(N, 0);
-    for (int i = 0; i < N; i++) {
-
-    }
-
-    vector<long long> rightSum(N, 0); // get rid of two smallest ones
-    int smallest = 0;
-    int small2nd = 0;
-    long long bigSum = 0;
-    for (int i = N - 1; i >= 0; i--) {
-        if (A[i] < smallest) {
-            small2nd = smallest;
-            smallest = A[i];
-        } else if (A[i] < small2nd) {
-            small2nd = A[i];
-        }
-        bigSum = bigSum + A[i];
-        rightSum[i] = bigSum - smallest - small2nd;
-    }
-
-    int ret = INT_MIN;
-    for (int i = 0; i < N-2; i++) {
-        long long temp = leftSum[i];
-        temp = temp + rightSum[i + 1];
-        if (temp > ret) {
-            ret = temp;
-        }
-    }
-    return ret;
-}
 
 
 // cout << "this is a debug message" << endl;
@@ -178,13 +116,9 @@ int solution(vector<int>& A) {
 #include <algorithm>
 #include <stack>
 #include <iostream>
-using namespace std;
-
-#include <vector>
-#include <unordered_map>
 #include <cmath>
-
 using namespace std;
+
 
 void resetTable(bool* table, int M)
 {
@@ -237,3 +171,81 @@ int solution(int M, vector<int>& A) {
     }
     return total;
 }
+
+
+#include <vector>
+#include <unordered_set>
+#include <iostream>
+
+using namespace std;
+
+int solution(int M, vector<int>& A) {
+    unordered_set<int> seen;
+    int front = 0, back = 0, total = 0;
+
+    auto resetTable = [&seen]() {
+        seen.clear();
+    };
+
+    while (front < A.size() && back < A.size()) {
+        while (front < A.size() && seen.find(A[front]) == seen.end()) {
+            seen.insert(A[front]);
+            total += front - back + 1;
+
+            if (total >= 1000000000) {
+                return 1000000000;
+            }
+
+            front++;
+        }
+
+        while (front < A.size() && back < A.size() && A[back] != A[front]) {
+            seen.erase(A[back]);
+            back++;
+        }
+
+        seen.erase(A[back]);
+        back++;
+    }
+
+    return total;
+}
+
+
+#include <vector>
+#include <iostream>
+
+using namespace std;
+
+int solution(int M, vector<int>& A) {
+    vector<bool> seen(M + 1, false);
+    int front = 0, back = 0, total = 0;
+
+    auto resetTable = [&seen]() {
+        fill(seen.begin(), seen.end(), false);
+    };
+
+    while (front < A.size() && back < A.size()) {
+        while (front < A.size() && !seen[A[front]]) {
+            seen[A[front]] = true;
+            total += front - back + 1;
+
+            if (total >= 1000000000) {
+                return 1000000000;
+            }
+
+            front++;
+        }
+
+        while (front < A.size() && back < A.size() && A[back] != A[front]) {
+            seen[A[back]] = false;
+            back++;
+        }
+
+        seen[A[back]] = false;
+        back++;
+    }
+
+    return total;
+}
+
