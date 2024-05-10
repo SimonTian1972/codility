@@ -63,7 +63,10 @@ int solution(vector<int>& A) {
         sum = sum + A[i];
         sums[i] = sum;
     }
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {        
+        if (i > 0 && A[i-1] < minVal) {
+            continue;
+        }
         for (int j = i + 1; j < N; j++) {
             double temp = static_cast<double>(sums[j] - sums[i] + A[i]) / (j - i + 1);
             if (temp < minVal) {
@@ -76,14 +79,4 @@ int solution(vector<int>& A) {
 }
 
 
-Example test : [4, 2, 2, 5, 1, 5, 8]
-OK
 
-Your test case: [-2, 4]
-    Returned value : 0
-
-Your test case: [2, 3, -4, 6, -4, 4]
-    Returned value : 2
-
-Your test case: [-10000, -10000, -10000, 10000]
-    Returned value : 0
