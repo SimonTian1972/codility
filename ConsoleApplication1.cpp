@@ -13,115 +13,65 @@ using namespace std;
 // you can use includes, for example:
 // #include <algorithm>
 
-class Solution {
-public:
-    // 辅函数
-    int lower_bound1(vector<int>& nums, int target) {
-        int l = 0, r = nums.size(), mid;
-        while (l < r) {
-            mid = l + (r - l) / 2;
-            if (nums[mid] >= target) {
-                r = mid;
-            }
-            else {
-                l = mid + 1;
-            }
-        }
-        return l;
+#include <map>
+#include <vector>
+#include <set>
+#include <climits>
+#include <unordered_map>
+#include <algorithm>
+#include <iostream>
+using namespace std;
+
+int solution(vector<int>& A) {
+    const auto MAX_INTERSECTIONS = 10000000;
+    int intersections = 0;
+    int v_size = A.size();
+
+    // create a vector of vectors, each containing two integers representing a segment
+    vector<vector<int>> segments;
+    // reserve the memory for all the vectors to avoid many allocations
+    segments.reserve(v_size);
+
+    // Add the pairs to the array
+    for (int i = 0; i < v_size; ++i) {
+        int radius = A[i];
+        int begin = max(0, static_cast<int>(i) - radius);
+        int end = min(v_size - 1, i + radius);
+        segments.push_back({ begin, end });
     }
 
-    int lower_bound2(vector<int>& nums, int target) {
-        const int N = nums.size();
-        int s = 0;
-        int e = N - 1;
-        while (s <= e) {
-            int mid = s + (e - s) / 2;
-            if (nums[mid] >= target) {
-                e = mid - 1;
-            }
-            else {
-                s = mid + 1;
-            }
+    // sort the array by the first entry of each pair: the disk start indices
+    sort(segments.begin(), segments.end());
+
+    for (int i = 0; i < v_size; ++i) {
+        // for each disk in order of the *starting* position of the disk, not the centre
+        // find the end position of that disk from the array of vectors
+        int disk_end = segments[i][1];
+        // find the index of the rightmost value less than or equal to the interval-end
+        // this finds the number of disks that have started before disk i ends
+        //auto it = upper_bound(segments.begin(), segments.end(), vector<int>{disk_end, INT_MAX});
+
+        auto it = upper_bound(segments.begin(), segments.end(), disk_end,
+            [](const int lhs, const vector<int>& rhs) -> bool { return lhs < rhs[0]; });
+
+        int count = distance(segments.begin(), it);
+        cout << "count= " << count << endl;
+
+        // subtract current position to exclude previous matches
+        // for disk i, i disks that start to the left have already been dealt with
+        // subtract i from count to prevent double counting
+        // subtract one more to prevent counting the disk itself
+        count -= (i + 1);
+        intersections += count;
+        if (intersections > MAX_INTERSECTIONS) {
+            return -1;
         }
-        return s;
     }
+    return intersections;
+}
 
-    int lower_bound(vector<int>& nums, int target) {
-        const int N = nums.size();
-        int s = 0;
-        int e = N - 1;
-        int ret = N;
-        while (s <= e) {
-            int mid = s + (e - s) / 2;
-            if (nums[mid] >= target) {
-                ret = mid;
-                e = mid - 1;
-            }
-            else {
-                s = mid + 1;
-            }
-        }
-        return ret;
-    }
-
-    int upper_bound(vector<int>& nums, int target) {
-        const int N = nums.size();
-        int s = 0;
-        int e = N - 1;
-        int ret = N;
-        while (s <= e) {
-            int mid = s + (e - s) / 2;
-            if (nums[mid] > target) {                
-                ret = N;
-                e = mid - 1;
-            }
-            else {
-                s = mid + 1;
-            }
-        }
-        return s;
-    }
-
-
-    int upper_bound2(vector<int>& nums, int target) {
-        const int N = nums.size();
-        int s = 0;
-        int e = N - 1;
-        while (s <= e) {
-            int mid = s + (e - s) / 2;
-            if (nums[mid] > target) {
-                e = mid - 1;
-            }
-            else {
-                s = mid + 1;
-            }
-        }
-        return s;
-    }
-
-
-    int upper_bound1(vector<int>& nums, int target) {
-        int l = 0, r = nums.size(), mid;
-        while (l < r) {
-            mid = l + (r - l) / 2;
-            if (nums[mid] > target) {
-                r = mid;
-            }
-            else {
-                l = mid + 1;
-            }
-        }
-        return l;
-    }
-
-    vector<int> searchRange(vector<int>& nums, int target) {
-        if (nums.empty()) return vector<int>{-1, -1};
-        int lower = lower_bound(nums, target);
-        int upper = upper_bound(nums, target) - 1; // 这里需要减1位
-        if (lower == nums.size() || nums[lower] != target) {
-            return vector<int>{-1, -1};
-        }
-        return vector<int>{lower, upper};
-    }
-
-};
+int main() {
+    vector<int> A = { 1, 5, 2, 1, 4, 0 };
+    cout << "Result: " << solution(A) << endl;
+    return 0;
+}
