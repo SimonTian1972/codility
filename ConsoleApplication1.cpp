@@ -98,26 +98,41 @@ using namespace std;
 
 
 
-int solution(vector<int>& A) {
+int solution(vector<int>& A, int X) {
     // Implement your solution here
-    const int N = A.size();
-    vector<int> leftH(N, 0);
-    vector<int> rightH(N, 0);
-    int high = A[0];
-    for (int i = 1; i < N; i++) {
-        leftH[i] = high;
-        high = max(high, A[i]);
+    map<int, int> myMap; // len, count
+    long long ret = 0;
+    for (auto& item : A) {
+        myMap[item]++;
     }
-    high = A[N - 1];
-    for (int i = N - 2; i >= 0; i--) {
-        rightH[i] = high;
-        high = max(high, A[i]);
+    set<int> mySet;
+    for (auto& myPair : myMap) {
+        if (myMap[myPair.first] >= 2) {
+            mySet.insert(myPair.first);
+        }
+        if (myMap[myPair.first] >= 4 && myPair.first*myPair.first >= X) {
+            ret++;
+        }
     }
 
-    int deep = 0;
-    for (int i = 1; i <= N - 2; i++) {
-        int curDeep = min(leftH[i] - A[i], rightH[i] - A[i]);
-        deep = max(deep, curDeep);
+    for (auto it = mySet.begin(); it != mySet.end(); ++it) {
+        int width = *it;
+        int height = X / width;
+        if (X % width != 0) {
+            height++;
+        }
+        auto valid = lower_bound(next(it), mySet.end(), height);
+
+        int len = distance(valid, mySet.end());
+        ret = ret + len;
+        //cout << "width= " << width << " height= " << height << " end_count= " << end_count << endl;
     }
-    return deep;
+
+    if (ret > 1000000000) {
+        return -1;
+    }
+    else {
+        return static_cast<int>(ret);
+    }
 }
+
