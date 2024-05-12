@@ -96,42 +96,28 @@ int solution(vector<int>& A, int X) {
 #include <sstream>
 using namespace std;
 
-bool isValid(string s) {
-    int numC = 0;
-    int alphaC = 0;
-    for (int i = 0; i < s.size(); i++) {
-        char cur = s[i];
-        if (isdigit(cur)) {
-            numC++;
-        } else if (isalpha(cur)) {
-            alphaC++;
-        } else {
-            return false;
-        }
-    }
-    if (alphaC % 2 == 1) {
-        return false;
-    }
-    if (numC % 2 == 0) {
-        return false;
-    }
-    return true;
-}
 
-int solution(string& S) {
 
-    string s;
-    stringstream ss(S);
-    vector<string> strVector;
-    while (getline(ss, s, ' ')) {
-        strVector.push_back(s);
+int solution(vector<int>& A) {
+    // Implement your solution here
+    const int N = A.size();
+    vector<int> leftH(N, 0);
+    vector<int> rightH(N, 0);
+    int high = A[0];
+    for (int i = 1; i < N; i++) {
+        leftH[i] = high;
+        high = max(high, A[i]);
+    }
+    high = A[N - 1];
+    for (int i = N - 2; i >= 0; i--) {
+        rightH[i] = high;
+        high = max(high, A[i]);
     }
 
-    int maxLen = -1;
-    for (string s : strVector) {
-        if (isValid(s) == true) {
-            maxLen = max(maxLen, (int)s.size());
-        }
+    int deep = 0;
+    for (int i = 1; i <= N - 2; i++) {
+        int curDeep = min(leftH[i] - A[i], rightH[i] - A[i]);
+        deep = max(deep, curDeep);
     }
-    return maxLen;
+    return deep;
 }
