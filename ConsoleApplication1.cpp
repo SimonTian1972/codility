@@ -100,7 +100,7 @@ using namespace std;
 
 int solution(vector<int>& A, int X) {
     // Implement your solution here
-    map<int, int> myMap; // len, count
+    unordered_map<int, int> myMap; // len, count
     long long ret = 0;
     for (auto& item : A) {
         myMap[item]++;
@@ -110,7 +110,7 @@ int solution(vector<int>& A, int X) {
         if (myMap[myPair.first] >= 2) {
             mySet.insert(myPair.first);
         }
-        if (myMap[myPair.first] >= 4 && myPair.first*myPair.first >= X) {
+        if (myMap[myPair.first] >= 4 && long(myPair.first)*long(myPair.first) >= long(X)) {
             ret++;
         }
     }
