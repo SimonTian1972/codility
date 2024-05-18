@@ -15,10 +15,10 @@ using namespace std;
 
 #include <stdio.h>
 #include <stdbool.h>
-int dir[5] = { 0, -1, 0 ,1, 0 };
+
 
 bool can_go(int** visit, bool* game_matrix, int rows, int cols, int from_row,
-    int from_column, int to_row, int to_column) {
+    int from_column, int to_row, int to_column, int rowStep, int colStep) {
     if (from_row < 0 || from_row >= rows) {
         return false;
     }
@@ -37,15 +37,17 @@ bool can_go(int** visit, bool* game_matrix, int rows, int cols, int from_row,
         return true;
     }
 
-
-
-    for (int i = 0; i < 4; i++) {
-        if (can_go(visit, game_matrix, rows, cols, from_row + dir[i],
-            from_column + dir[i + 1], to_row, to_column) == true) {
-            return true;
-        }
-
+    if (can_go(visit, game_matrix, rows, cols, from_row + rowStep,
+        from_column, to_row, to_column, rowStep, colStep) == true) {
+        return true;
     }
+
+    if (can_go(visit, game_matrix, rows, cols, from_row,
+        from_column + colStep, to_row, to_column, rowStep, colStep) == true) {
+        return true;
+    }
+
+    
     return false;
 }
 
@@ -57,8 +59,21 @@ bool can_travel_to(bool* game_matrix, int rows, int cols, int from_row,
     for (int i = 0; i < rows; i++) {
         visit[i] = (int*)calloc(cols, sizeof(int));
     }
+    int rowStep;
+    if ((to_row - from_row) == 0) {
+        rowStep = 0;
+    } else {
+        rowStep = (to_row - from_row) / abs(to_row - from_row);
+    }
+    int colStep;
+    if (to_column - from_column == 0) {
+        colStep = 0;
+    }
+    else {
+        colStep = (to_column - from_column) / abs(to_column - from_column);
+    }
     bool ret = can_go(visit, game_matrix, rows, cols, from_row,
-        from_column, to_row, to_column);
+        from_column, to_row, to_column, rowStep, colStep);
 
     // Write your code here
     for (int i = 0; i < rows; i++) {
