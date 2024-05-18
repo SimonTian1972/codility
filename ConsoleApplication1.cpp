@@ -116,12 +116,23 @@ bool can_travel_to(bool* game_matrix, int rows, int cols, int from_row,
     {
         return false;
     }
+
+    if (from_row < 0 || from_row >= rows || from_column < 0 || from_column >= cols)
+    {
+        return false;
+    }
     if (game_matrix[to_row * cols + to_column] == false) {
         return false;
     }
 
+    if (game_matrix[from_row * cols + from_column] == false) {
+        return false;
+    }
+
     bool ret = true;
-    if (from_row != to_row && from_column != to_column) {
+    if (from_row == to_row && from_column == to_column) {
+        return true;
+    } if (from_row != to_row && from_column != to_column) {
         return false;
     } else if (from_row == to_row) {
         int colStep = (to_column - from_column) / abs(to_column - from_column);
@@ -157,28 +168,12 @@ int main()
         {false, false, false, false, false, false},
     };
 
-    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 2, 2)); // true, Valid move
-    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 3, 4)); // false, Can't travel through land
-    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 6, 2)); // false, Out of bounds
+    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 4, 2)); // true, Valid move
+    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 3, 2)); // false, Can't travel through land
+    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 2, 2)); // false, Out of bounds
 }
 #endif
 
 
-#ifndef RunTests
-int main()
-{
-    bool game_matrix[6][6] = {
-        {false, true,  true,  false, false, false},
-        {true,  true,  true,  false, false, false},
-        {true,  true,  true,  true,  true,  true},
-        {false, true,  true,  false, true,  true},
-        {false, true,  true,  true,  false, true},
-        {false, false, false, false, false, false},
-    };
 
-    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 2, 2)); // true, Valid move
-    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 3, 4)); // false, Can't travel through land
-    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 6, 2)); // false, Out of bounds
-}
-#endif
 
