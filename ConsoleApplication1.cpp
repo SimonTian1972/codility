@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 // Function to find two numbers that add up to the target
-int* twoSum_old(int* nums, int numsSize, int target, int* returnSize) {
+int* twoSum_c(int* nums, int numsSize, int target, int* returnSize) {
     // Allocate memory for the return array
     int* result = (int*)malloc(2 * sizeof(int));
     // Initialize returnSize to 2
@@ -62,14 +62,15 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
     *returnSize = 2;
     size_t vl = 0;
     for (int n = 0; n < numsSize; n += vl) {
-        vl = __riscv_vsetvl_e8m1(numsSize - n);
+        vl = __riscv_vsetvl_e32m1(numsSize - n);
         vint32m1_t vec_a = __riscv_vle32_v_i32m1(nums + n, vl);
         print_vint32m1(vec_a);
+        printf("numsSize = %d, n= %d vl = %u \n", numsSize, n, vl);
         for (int m = n + 1; m < numsSize; m = m + vl) {
             int valid_m = numsSize - m;
             vint32m1_t vec_b = __riscv_vle32_v_i32m1(nums + m, MIN(valid_m, vl));
             vint32m1_t seq = __riscv_vid_v_i32m1(vl);
-            vbool32_t mask = __riscv_vmsge_vx_i32m1_b32(seq, valid_m, vl);
+            vbool32_t mask = __riscv_vmsge_vx_i32m1_b32(seq, MIN(valid_m, vl), vl);
             vec_b = __riscv_vmerge_vxm_i32m1(vec_b, INT_MAX, mask, vl);
             print_vint32m1(vec_b);
             // over boundary should be set with INT_MAX
@@ -109,12 +110,12 @@ vmerge vt, vo, vmask, t0  ; Merge elements from vo and t0 based on vmask
 */
 
 
-int main() {
+int main_old() {
     // Test case 1
-    int nums1[] = { 2, 7, 11, 15 };
-    int target1 = 9;
+    int nums1[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2 };
+    int target1 = 3;
     int returnSize1;
-    int* result1 = twoSum(nums1, 4, target1, &returnSize1);
+    int* result1 = twoSum(nums1, sizeof(nums1) / sizeof(int), target1, &returnSize1);
 
     if (result1 != NULL) {
         printf("Test case 1: Indices [%d, %d]\n", result1[0], result1[1]);
@@ -151,6 +152,89 @@ int main() {
     else {
         printf("Test case 3: No solution found\n");
     }
+
+    return 0;
+}
+
+
+#include <stdbool.h>
+int* twoSum_c(int* nums, int numsSize, int target, int* returnSize);
+int* twoSum(int* nums, int numsSize, int target, int* returnSize);
+
+bool compare_results(int* result1, int* result2, int size1, int size2) {
+    if (size1 != size2) {
+        return false;
+    }
+    for (int i = 0; i < size1; i++) {
+        if (result1[i] != result2[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void run_test_case(int* nums, int numsSize, int target) {
+    int returnSize_c;
+    int returnSize_v;
+    int* result_c = twoSum_c(nums, numsSize, target, &returnSize_c);
+    int* result_v = twoSum(nums, numsSize, target, &returnSize_v);
+
+    printf("Test case: nums = [");
+    for (int i = 0; i < numsSize; i++) {
+        printf("%d%s", nums[i], (i < numsSize - 1) ? ", " : "");
+    }
+    printf("], target = %d\n", target);
+
+    if (compare_results(result_c, result_v, returnSize_c, returnSize_v)) {
+        printf("Results are the same.\n");
+    }
+    else {
+        printf("Results differ!\n");
+        printf("twoSum_c result: ");
+        if (returnSize_c == 0) {
+            printf("No solution\n");
+        }
+        else {
+            printf("[%d, %d]\n", result_c[0], result_c[1]);
+        }
+        printf("twoSum result: ");
+        if (returnSize_v == 0) {
+            printf("No solution\n");
+        }
+        else {
+            printf("[%d, %d]\n", result_v[0], result_v[1]);
+        }
+    }
+
+    if (result_c) free(result_c);
+    if (result_v) free(result_v);
+}
+
+int main() {
+    // Test cases
+    int nums1[] = { 2, 7, 11, 15 };
+    run_test_case(nums1, 4, 9);
+
+    int nums2[] = { 3, 2, 4 };
+    run_test_case(nums2, 3, 6);
+
+    int nums3[] = { 3, 3 };
+    run_test_case(nums3, 2, 6);
+
+    int nums4[] = { 1, 2, 3, 4, 5 };
+    run_test_case(nums4, 5, 10);
+
+    int nums5[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2 };
+    run_test_case(nums5, 11, 3);
+
+    int nums6[] = { 5, 75, 25 };
+    run_test_case(nums6, 3, 100);
+
+    int nums7[] = { 1, 2, 3, 4, 4, 9, 56, 90 };
+    run_test_case(nums7, 8, 8);
+
+    int nums8[] = { -1, -2, -3, -4, -5 };
+    run_test_case(nums8, 5, -8);
 
     return 0;
 }
