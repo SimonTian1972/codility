@@ -52,6 +52,8 @@ void print_vint32m1(vint32m1_t vec) {
     }
     printf("\n");
 }
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 // Function to find two numbers that add up to the target
 int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
     // Allocate memory for the return array
@@ -59,14 +61,13 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
     // Initialize returnSize to 2
     *returnSize = 2;
     size_t vl = 0;
-    size_t vlmax = __riscv_vsetvlmax_e32m1();
     for (int n = 0; n < numsSize; n += vl) {
-        vint32m1_t vec_a = __riscv_vle32ff_v_i32m1(nums + n, &vl, vlmax);
+        vl = __riscv_vsetvl_e8m1(numsSize - n);
+        vint32m1_t vec_a = __riscv_vle32_v_i32m1(nums + n, vl);
         print_vint32m1(vec_a);
         for (int m = n + 1; m < numsSize; m = m + vl) {
-            size_t temp = 0;
-            vint32m1_t vec_b = __riscv_vle32ff_v_i32m1(nums + m, &temp, vl);
             int valid_m = numsSize - m;
+            vint32m1_t vec_b = __riscv_vle32_v_i32m1(nums + m, MIN(valid_m, vl));
             vint32m1_t seq = __riscv_vid_v_i32m1(vl);
             vbool32_t mask = __riscv_vmsge_vx_i32m1_b32(seq, valid_m, vl);
             vec_b = __riscv_vmerge_vxm_i32m1(vec_b, INT_MAX, mask, vl);
@@ -79,7 +80,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
                 int pos = __riscv_vfirst_m_b32(is_find, vl);
                 if (pos != -1) {
                     result[0] = n + pos;
-                    result[1] = m + pos;
+                    result[1] = m + pos + i;
                     return result;
                 }
                 vec_b = __riscv_vslide1down_vx_i32m1(vec_b, INT_MAX, vl);
