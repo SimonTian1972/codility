@@ -10,34 +10,44 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 
-// Function to find two numbers that add up to the target
-int* twoSum_c(int* nums, int numsSize, int target, int* returnSize) {
-    // Allocate memory for the return array
-    int* result = (int*)malloc(2 * sizeof(int));
-    // Initialize returnSize to 2
-    *returnSize = 2;
+// Function to swap two elements
+void swap(int* a, int* b) {
+    int t = *a;
+    *a = *b;
+    *b = t;
+}
 
-    // Loop through the array to find the two numbers
-    for (int i = 0; i < numsSize; i++) {
-        for (int j = i + 1; j < numsSize; j++) {
-            // Check if the sum of nums[i] and nums[j] equals the target
-            if (nums[i] + nums[j] == target) {
-                // Store the indices in the result array
-                result[0] = i;
-                result[1] = j;
-                return result;
-            }
+// Partition function to place the pivot element at its correct position
+// and place smaller elements to the left and greater elements to the right
+int partition(int arr[], int low, int high) {
+    int pivot = arr[high];  // pivot
+    int i = (low - 1);      // Index of smaller element
+
+    for (int j = low; j <= high - 1; j++) {
+        // If current element is smaller than or equal to pivot
+        if (arr[j] <= pivot) {
+            i++;  // increment index of smaller element
+            swap(&arr[i], &arr[j]);
         }
     }
-
-    // If no solution is found, set returnSize to 0
-    *returnSize = 0;
-    // Free the allocated memory
-    free(result);
-    // Return NULL to indicate no solution
-    return NULL;
+    swap(&arr[i + 1], &arr[high]);
+    return (i + 1);
 }
+
+// QuickSort function
+void quickSort(int arr[], int low, int high) {
+    if (low < high) {
+        // pi is partitioning index, arr[p] is now at right place
+        int pi = partition(arr, low, high);
+
+        // Separately sort elements before partition and after partition
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
+}
+
 
 void print_vint32m1(vint32m1_t vec) {
     int32_t buffer[100]; // VLENMAX should be the maximum vector length
@@ -53,188 +63,74 @@ void print_vint32m1(vint32m1_t vec) {
     printf("\n");
 }
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-// Function to find two numbers that add up to the target
-int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
-    // Allocate memory for the return array
-    int* result = (int*)malloc(2 * sizeof(int));
-    // Initialize returnSize to 2
-    *returnSize = 2;
+int partitionRisc(int arr[], int low, int high) {
+    int pivot = arr[high];  // pivot
+    int l = low; // low of unknow area
+    int h = high - 1; // high of unknow area
     size_t vl = 0;
-    for (int n = 0; n < numsSize; n += vl) {
-        vl = __riscv_vsetvl_e32m1(numsSize - n);
-        vint32m1_t vec_a = __riscv_vle32_v_i32m1(nums + n, vl);
+    size_t vlmax = __riscv_vsetvlmax_e32m1();
+    while (l <= h) { // l will point the first high element 
+        vl = __riscv_vsetvl_e32m1(h - l + 1); // h will point the last low element
+        vint32m1_t vec_a = __riscv_vle32_v_i32m1(arr + l, vl);
+        vint32m1_t vec_b = __riscv_vle32_v_i32m1(arr + h - (vl - 1), vl);
         print_vint32m1(vec_a);
-        printf("numsSize = %d, n= %d vl = %u \n", numsSize, n, vl);
-        for (int m = n + 1; m < numsSize; m = m + vl) {
-            int valid_m = numsSize - m;
-            vint32m1_t vec_b = __riscv_vle32_v_i32m1(nums + m, MIN(valid_m, vl));
-            vint32m1_t seq = __riscv_vid_v_i32m1(vl);
-            vbool32_t mask = __riscv_vmsge_vx_i32m1_b32(seq, MIN(valid_m, vl), vl);
-            vec_b = __riscv_vmerge_vxm_i32m1(vec_b, INT_MAX, mask, vl);
-            print_vint32m1(vec_b);
-            // over boundary should be set with INT_MAX
-            for (int i = 0; i < vl; i++) {
-                // sum vec_a + vec_b, 
-                vint32m1_t vec_c = __riscv_vsadd_vv_i32m1(vec_a, vec_b, vl);
-                vbool32_t is_find = __riscv_vmseq_vx_i32m1_b32(vec_c, target, vl);
-                int pos = __riscv_vfirst_m_b32(is_find, vl);
-                if (pos != -1) {
-                    result[0] = n + pos;
-                    result[1] = m + pos + i;
-                    return result;
-                }
-                vec_b = __riscv_vslide1down_vx_i32m1(vec_b, INT_MAX, vl);
-            }
-        }
+        printf("all \n");
+
+        vbool32_t mask = __riscv_vmsle_vx_i32m1_b32(vec_a, pivot, vl);
+        vint32m1_t leElement = __riscv_vcompress_vm_i32m1(vec_a, mask, vl);
+        print_vint32m1(leElement);
+        printf("lower \n");
+        size_t active_count = __riscv_vcpop_m_b32(mask, vl);
+        __riscv_vse32_v_i32m1(arr + l, leElement, active_count);
+        l = l + active_count;
+
+        mask = __riscv_vmsgt_vx_i32m1_b32(vec_a, pivot, vl);
+        vint32m1_t gtElement = __riscv_vcompress_vm_i32m1(vec_a, mask, vl);
+        print_vint32m1(gtElement);
+        printf("higher \n");
+        active_count = __riscv_vcpop_m_b32(mask, vl);
+        __riscv_vse32_v_i32m1(arr + h - (active_count - 1), gtElement, active_count);
+        h = h - active_count;
+
+        vec_b = __riscv_vslidedown_vx_i32m1(vec_b, vlmax - active_count, vl);
+        __riscv_vse32_v_i32m1(arr + l, vec_b, active_count);
     }
 
-    // If no solution is found, set returnSize to 0
-    *returnSize = 0;
-    // Free the allocated memory
-    free(result);
-    // Return NULL to indicate no solution
-    return NULL;
-}
-
-/*
-
-; Assuming n (total elements) is 10 and m (elements to keep) is 5
-
-sub a0, a1, a2  ; Calculate upper element index (a1 = 10, a2 = 5, a0 = 5)
-vseqvli vmask, a0, e32  ; Create a mask with zeros in first 5 elements and ones in upper elements
-
-li t0, 0x7FFFFFFF  ; Load INT_MAX into t0
-vmerge vt, vo, vmask, t0  ; Merge elements from vo and t0 based on vmask
-
-*/
-
-
-int main_old() {
-    // Test case 1
-    int nums1[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2 };
-    int target1 = 3;
-    int returnSize1;
-    int* result1 = twoSum(nums1, sizeof(nums1) / sizeof(int), target1, &returnSize1);
-
-    if (result1 != NULL) {
-        printf("Test case 1: Indices [%d, %d]\n", result1[0], result1[1]);
-        free(result1); // Free the allocated memory
-    }
-    else {
-        printf("Test case 1: No solution found\n");
-    }
-
-    // Test case 2
-    int nums2[] = { 3, 2, 4 };
-    int target2 = 6;
-    int returnSize2;
-    int* result2 = twoSum(nums2, 3, target2, &returnSize2);
-
-    if (result2 != NULL) {
-        printf("Test case 2: Indices [%d, %d]\n", result2[0], result2[1]);
-        free(result2); // Free the allocated memory
-    }
-    else {
-        printf("Test case 2: No solution found\n");
-    }
-
-    // Test case 3
-    int nums3[] = { 3, 3 };
-    int target3 = 6;
-    int returnSize3;
-    int* result3 = twoSum(nums3, 2, target3, &returnSize3);
-
-    if (result3 != NULL) {
-        printf("Test case 3: Indices [%d, %d]\n", result3[0], result3[1]);
-        free(result3); // Free the allocated memory
-    }
-    else {
-        printf("Test case 3: No solution found\n");
-    }
-
-    return 0;
+    swap(&arr[l], &arr[high]);// swap with pivot
+    return l;
 }
 
 
-#include <stdbool.h>
-int* twoSum_c(int* nums, int numsSize, int target, int* returnSize);
-int* twoSum(int* nums, int numsSize, int target, int* returnSize);
+void quickSortRisc(int arr[], int low, int high) {
+    if (low < high) {
+        // pi is partitioning index, arr[p] is now at right place
+        int pi = partitionRisc(arr, low, high);
 
-bool compare_results(int* result1, int* result2, int size1, int size2) {
-    if (size1 != size2) {
-        return false;
+        // Separately sort elements before partition and after partition
+        quickSortRisc(arr, low, pi - 1);
+        quickSortRisc(arr, pi + 1, high);
     }
-    for (int i = 0; i < size1; i++) {
-        if (result1[i] != result2[i]) {
-            return false;
-        }
-    }
-    return true;
 }
 
-void run_test_case(int* nums, int numsSize, int target) {
-    int returnSize_c;
-    int returnSize_v;
-    int* result_c = twoSum_c(nums, numsSize, target, &returnSize_c);
-    int* result_v = twoSum(nums, numsSize, target, &returnSize_v);
-
-    printf("Test case: nums = [");
-    for (int i = 0; i < numsSize; i++) {
-        printf("%d%s", nums[i], (i < numsSize - 1) ? ", " : "");
+// Function to print an array
+void printArray(int arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
     }
-    printf("], target = %d\n", target);
-
-    if (compare_results(result_c, result_v, returnSize_c, returnSize_v)) {
-        printf("Results are the same.\n");
-    }
-    else {
-        printf("Results differ!\n");
-        printf("twoSum_c result: ");
-        if (returnSize_c == 0) {
-            printf("No solution\n");
-        }
-        else {
-            printf("[%d, %d]\n", result_c[0], result_c[1]);
-        }
-        printf("twoSum result: ");
-        if (returnSize_v == 0) {
-            printf("No solution\n");
-        }
-        else {
-            printf("[%d, %d]\n", result_v[0], result_v[1]);
-        }
-    }
-
-    if (result_c) free(result_c);
-    if (result_v) free(result_v);
+    printf("\n");
 }
 
+// Driver program to test the above functions
 int main() {
-    // Test cases
-    int nums1[] = { 2, 7, 11, 15 };
-    run_test_case(nums1, 4, 9);
+    int arr[] = { 10, 7, 8, 9, 1, 5 };
+    int n = sizeof(arr) / sizeof(arr[0]);
+    printf("Given array is \n");
+    printArray(arr, n);
 
-    int nums2[] = { 3, 2, 4 };
-    run_test_case(nums2, 3, 6);
+    quickSortRisc(arr, 0, n - 1);
 
-    int nums3[] = { 3, 3 };
-    run_test_case(nums3, 2, 6);
-
-    int nums4[] = { 1, 2, 3, 4, 5 };
-    run_test_case(nums4, 5, 10);
-
-    int nums5[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2 };
-    run_test_case(nums5, 11, 3);
-
-    int nums6[] = { 5, 75, 25 };
-    run_test_case(nums6, 3, 100);
-
-    int nums7[] = { 1, 2, 3, 4, 4, 9, 56, 90 };
-    run_test_case(nums7, 8, 8);
-
-    int nums8[] = { -1, -2, -3, -4, -5 };
-    run_test_case(nums8, 5, -8);
-
+    printf("Sorted array is \n");
+    printArray(arr, n);
     return 0;
 }
+
