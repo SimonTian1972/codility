@@ -1,179 +1,155 @@
-﻿#include <map>
-#include <unordered_map>
-#include <vector>
-#include <set>
-#include <unordered_set>
-#include <climits>
-#include <unordered_map>
-#include <algorithm>
-#include <stack>
-#include <iostream>
-using namespace std;
+﻿
 
 
 
+
+#include <riscv_vector.h>
+#include <string.h>
+#include <stddef.h>
+#include <limits.h>
 
 #include <stdio.h>
-#include <stdbool.h>
+#include <stdlib.h>
 
+// Function to find two numbers that add up to the target
+int* twoSum_old(int* nums, int numsSize, int target, int* returnSize) {
+    // Allocate memory for the return array
+    int* result = (int*)malloc(2 * sizeof(int));
+    // Initialize returnSize to 2
+    *returnSize = 2;
 
-bool can_go(int** visit, bool* game_matrix, int rows, int cols, int from_row,
-    int from_column, int to_row, int to_column, int rowStep, int colStep) {
-    if (from_row < 0 || from_row >= rows) {
-        return false;
-    }
-    if (from_column < 0 || from_column >= cols) {
-        return false;
-    }
-    if (visit[from_row][from_column] != 0) {
-        return false;
-    }
-    visit[from_row][from_column] = 1;
-
-    if ((game_matrix + from_row * cols)[from_column] == false) {
-        return false;
-    }
-    if (from_row == to_row && from_column == to_column) {
-        return true;
-    }
-
-    if (can_go(visit, game_matrix, rows, cols, from_row + rowStep,
-        from_column, to_row, to_column, rowStep, colStep) == true) {
-        return true;
+    // Loop through the array to find the two numbers
+    for (int i = 0; i < numsSize; i++) {
+        for (int j = i + 1; j < numsSize; j++) {
+            // Check if the sum of nums[i] and nums[j] equals the target
+            if (nums[i] + nums[j] == target) {
+                // Store the indices in the result array
+                result[0] = i;
+                result[1] = j;
+                return result;
+            }
+        }
     }
 
-    if (can_go(visit, game_matrix, rows, cols, from_row,
-        from_column + colStep, to_row, to_column, rowStep, colStep) == true) {
-        return true;
-    }
-
-    
-    return false;
+    // If no solution is found, set returnSize to 0
+    *returnSize = 0;
+    // Free the allocated memory
+    free(result);
+    // Return NULL to indicate no solution
+    return NULL;
 }
 
+void print_vint32m1(vint32m1_t vec) {
+    int32_t buffer[100]; // VLENMAX should be the maximum vector length
+    size_t vl = __riscv_vsetvl_e32m1(100); // Set the vector length
 
-bool can_travel_to1(bool* game_matrix, int rows, int cols, int from_row,
-    int from_column, int to_row, int to_column)
-{
-    int** visit = (int **)calloc(rows, sizeof(int*));
-    for (int i = 0; i < rows; i++) {
-        visit[i] = (int*)calloc(cols, sizeof(int));
+    // Store vector elements into a buffer
+    __riscv_vse32_v_i32m1(buffer, vec, vl);
+
+    // Print each element
+    for (size_t i = 0; i < vl; ++i) {
+        printf("%d ", buffer[i]);
     }
-    int rowStep;
-    if ((to_row - from_row) == 0) {
-        rowStep = 0;
-    } else {
-        rowStep = (to_row - from_row) / abs(to_row - from_row);
+    printf("\n");
+}
+// Function to find two numbers that add up to the target
+int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
+    // Allocate memory for the return array
+    int* result = (int*)malloc(2 * sizeof(int));
+    // Initialize returnSize to 2
+    *returnSize = 2;
+    size_t vl = 0;
+    size_t vlmax = __riscv_vsetvlmax_e32m1();
+    for (int n = 0; n < numsSize; n += vl) {
+        vint32m1_t vec_a = __riscv_vle32ff_v_i32m1(nums + n, &vl, vlmax);
+        print_vint32m1(vec_a);
+        for (int m = n + 1; m < numsSize; m = m + vl) {
+            size_t temp = 0;
+            vint32m1_t vec_b = __riscv_vle32ff_v_i32m1(nums + m, &temp, vl);
+            int valid_m = numsSize - m;
+            vint32m1_t seq = __riscv_vid_v_i32m1(vl);
+            vbool32_t mask = __riscv_vmsge_vx_i32m1_b32(seq, valid_m, vl);
+            vec_b = __riscv_vmerge_vxm_i32m1(vec_b, INT_MAX, mask, vl);
+            print_vint32m1(vec_b);
+            // over boundary should be set with INT_MAX
+            for (int i = 0; i < vl; i++) {
+                // sum vec_a + vec_b, 
+                vint32m1_t vec_c = __riscv_vsadd_vv_i32m1(vec_a, vec_b, vl);
+                vbool32_t is_find = __riscv_vmseq_vx_i32m1_b32(vec_c, target, vl);
+                int pos = __riscv_vfirst_m_b32(is_find, vl);
+                if (pos != -1) {
+                    result[0] = n + pos;
+                    result[1] = m + pos;
+                    return result;
+                }
+                vec_b = __riscv_vslide1down_vx_i32m1(vec_b, INT_MAX, vl);
+            }
+        }
     }
-    int colStep;
-    if (to_column - from_column == 0) {
-        colStep = 0;
+
+    // If no solution is found, set returnSize to 0
+    *returnSize = 0;
+    // Free the allocated memory
+    free(result);
+    // Return NULL to indicate no solution
+    return NULL;
+}
+
+/*
+
+; Assuming n (total elements) is 10 and m (elements to keep) is 5
+
+sub a0, a1, a2  ; Calculate upper element index (a1 = 10, a2 = 5, a0 = 5)
+vseqvli vmask, a0, e32  ; Create a mask with zeros in first 5 elements and ones in upper elements
+
+li t0, 0x7FFFFFFF  ; Load INT_MAX into t0
+vmerge vt, vo, vmask, t0  ; Merge elements from vo and t0 based on vmask
+
+*/
+
+
+int main() {
+    // Test case 1
+    int nums1[] = { 2, 7, 11, 15 };
+    int target1 = 9;
+    int returnSize1;
+    int* result1 = twoSum(nums1, 4, target1, &returnSize1);
+
+    if (result1 != NULL) {
+        printf("Test case 1: Indices [%d, %d]\n", result1[0], result1[1]);
+        free(result1); // Free the allocated memory
     }
     else {
-        colStep = (to_column - from_column) / abs(to_column - from_column);
-    }
-    bool ret = true;
-    if (from_row != to_row && from_column != to_column) {
-        ret = false;
-    } else if (from_row == to_row){
-        for (int c = from_column; c != to_column; c = c + colStep) {
-            if (game_matrix[from_row * cols + c] == false) {
-                ret = false;
-                break;
-            }
-        }
-    } else {
-        for (int r = from_row; r != to_row; r = r + rowStep) {
-            if (game_matrix[r*cols + from_column] == false) {
-                ret = false;
-                break;
-            }
-        }
+        printf("Test case 1: No solution found\n");
     }
 
-    if (game_matrix[to_row * cols + to_column] == false)
-    {
-        ret = false;
+    // Test case 2
+    int nums2[] = { 3, 2, 4 };
+    int target2 = 6;
+    int returnSize2;
+    int* result2 = twoSum(nums2, 3, target2, &returnSize2);
+
+    if (result2 != NULL) {
+        printf("Test case 2: Indices [%d, %d]\n", result2[0], result2[1]);
+        free(result2); // Free the allocated memory
+    }
+    else {
+        printf("Test case 2: No solution found\n");
     }
 
-    // Write your code here
-    for (int i = 0; i < rows; i++) {
-        free(visit[i]);
+    // Test case 3
+    int nums3[] = { 3, 3 };
+    int target3 = 6;
+    int returnSize3;
+    int* result3 = twoSum(nums3, 2, target3, &returnSize3);
+
+    if (result3 != NULL) {
+        printf("Test case 3: Indices [%d, %d]\n", result3[0], result3[1]);
+        free(result3); // Free the allocated memory
     }
-    free(visit);
-    return ret;
+    else {
+        printf("Test case 3: No solution found\n");
+    }
+
+    return 0;
 }
-
-
-#include <stdio.h>
-#include <stdbool.h>
-
-
-bool can_travel_to(bool* game_matrix, int rows, int cols, int from_row,
-    int from_column, int to_row, int to_column)
-{
-    if (to_row < 0 || to_row >= rows || to_column < 0 || to_column >= cols)
-    {
-        return false;
-    }
-
-    if (from_row < 0 || from_row >= rows || from_column < 0 || from_column >= cols)
-    {
-        return false;
-    }
-    if (game_matrix[to_row * cols + to_column] == false) {
-        return false;
-    }
-
-    if (game_matrix[from_row * cols + from_column] == false) {
-        return false;
-    }
-
-    bool ret = true;
-    if (from_row == to_row && from_column == to_column) {
-        return true;
-    } if (from_row != to_row && from_column != to_column) {
-        return false;
-    } else if (from_row == to_row) {
-        int colStep = (to_column - from_column) / abs(to_column - from_column);
-        for (int c = from_column; c != to_column; c = c + colStep) {
-            if (game_matrix[from_row * cols + c] == false) {
-                ret = false;
-                break;
-            }
-        }
-    } else { // from_column == to_column
-        int rowStep = (to_row - from_row) / abs(to_row - from_row);
-        for (int r = from_row; r != to_row; r = r + rowStep) {
-            if (game_matrix[r * cols + from_column] == false) {
-                ret = false;
-                break;
-            }
-        }
-    }
-
-    return ret;
-}
-
-
-#ifndef RunTests
-int main()
-{
-    bool game_matrix[6][6] = {
-        {false, true,  true,  false, false, false},
-        {true,  true,  true,  false, false, false},
-        {true,  true,  true,  true,  true,  true},
-        {false, true,  true,  false, true,  true},
-        {false, true,  true,  true,  false, true},
-        {false, false, false, false, false, false},
-    };
-
-    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 4, 2)); // true, Valid move
-    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 3, 2)); // false, Can't travel through land
-    printf("%d\n", can_travel_to((bool*)game_matrix, 6, 6, 3, 2, 2, 2)); // false, Out of bounds
-}
-#endif
-
-
-
-
