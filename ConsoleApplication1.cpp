@@ -63,40 +63,60 @@ void print_vint32m1(vint32m1_t vec) {
     printf("\n");
 }
 
+void printArray1(int arr[], int low, int high) {
+    printf("low=%d high=%d ", low, high);
+    for (int i = low; i <= high; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+
 int partitionRisc(int arr[], int low, int high) {
     int pivot = arr[high];  // pivot
     int l = low; // low of unknow area
     int h = high - 1; // high of unknow area
     size_t vl = 0;
     size_t vlmax = __riscv_vsetvlmax_e32m1();
+    printArray1(arr, low, high);
     while (l <= h) { // l will point the first high element 
         vl = __riscv_vsetvl_e32m1(h - l + 1); // h will point the last low element
         vint32m1_t vec_a = __riscv_vle32_v_i32m1(arr + l, vl);
         vint32m1_t vec_b = __riscv_vle32_v_i32m1(arr + h - (vl - 1), vl);
-        print_vint32m1(vec_a);
-        printf("all \n");
+        //print_vint32m1(vec_a);
+        //printf("all l=%d h=%d \n", l, h);
 
         vbool32_t mask = __riscv_vmsle_vx_i32m1_b32(vec_a, pivot, vl);
         vint32m1_t leElement = __riscv_vcompress_vm_i32m1(vec_a, mask, vl);
-        print_vint32m1(leElement);
-        printf("lower \n");
+        //print_vint32m1(leElement);
+        //printf("lower \n");
         size_t active_count = __riscv_vcpop_m_b32(mask, vl);
         __riscv_vse32_v_i32m1(arr + l, leElement, active_count);
+        printf("save low vl=%d active_count=%d ", vl, active_count);
+        printArray1(arr, low, high);
         l = l + active_count;
 
         mask = __riscv_vmsgt_vx_i32m1_b32(vec_a, pivot, vl);
         vint32m1_t gtElement = __riscv_vcompress_vm_i32m1(vec_a, mask, vl);
-        print_vint32m1(gtElement);
-        printf("higher \n");
+        //print_vint32m1(gtElement);
+        //printf("higher \n");
         active_count = __riscv_vcpop_m_b32(mask, vl);
         __riscv_vse32_v_i32m1(arr + h - (active_count - 1), gtElement, active_count);
+        printf("save high vl=%d active_count=%d ", vl, active_count);
+        printArray1(arr, low, high);
+        int overlap = 2 * (int)active_count - (h - l + 1);
+        if (overlap < 0) {
+            overlap = 0;
+        }
         h = h - active_count;
 
-        vec_b = __riscv_vslidedown_vx_i32m1(vec_b, vlmax - active_count, vl);
-        __riscv_vse32_v_i32m1(arr + l, vec_b, active_count);
+        vec_b = __riscv_vslidedown_vx_i32m1(vec_b, vlmax - active_count + overlap, vl);
+        printf("move low active_count=%d ", active_count - overlap);
+        __riscv_vse32_v_i32m1(arr + l, vec_b, active_count - overlap);
+        printArray1(arr, low, high);
     }
 
     swap(&arr[l], &arr[high]);// swap with pivot
+    printArray1(arr, low, high);
     return l;
 }
 
