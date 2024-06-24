@@ -49,16 +49,23 @@ void quickSort(int arr[], int low, int high) {
 }
 
 
-void print_vint32m1(vint32m1_t vec) {
+void print_vint32m1(vint32m1_t vec, size_t vl) {
     int32_t buffer[100]; // VLENMAX should be the maximum vector length
-    size_t vl = __riscv_vsetvl_e32m1(100); // Set the vector length
-
     // Store vector elements into a buffer
     __riscv_vse32_v_i32m1(buffer, vec, vl);
 
     // Print each element
     for (size_t i = 0; i < vl; ++i) {
         printf("%d ", buffer[i]);
+    }
+    printf("\n");
+}
+
+void print_mask(vbool32_t mask, size_t vl) {
+    uint8_t buffer[100];
+    __riscv_vsm_v_b32(buffer, mask, vl);
+    for (size_t i = 0; i < vl / 8 + (vl % 8 != 0); i++) {
+        printf("%02X ", buffer[i]);
     }
     printf("\n");
 }
@@ -82,13 +89,13 @@ int partitionRisc(int arr[], int low, int high) {
         vl = __riscv_vsetvl_e32m1(h - l + 1); // h will point the last low element
         vint32m1_t vec_a = __riscv_vle32_v_i32m1(arr + l, vl);
         vint32m1_t vec_b = __riscv_vle32_v_i32m1(arr + h - (vl - 1), vl);
-        //print_vint32m1(vec_a);
-        //printf("all l=%d h=%d \n", l, h);
+        //print_vint32m1(vec_a, vl);
+
 
         vbool32_t mask = __riscv_vmsle_vx_i32m1_b32(vec_a, pivot, vl);
         vint32m1_t leElement = __riscv_vcompress_vm_i32m1(vec_a, mask, vl);
-        //print_vint32m1(leElement);
-        //printf("lower \n");
+        print_mask(mask, vl);
+
         size_t active_count = __riscv_vcpop_m_b32(mask, vl);
         __riscv_vse32_v_i32m1(arr + l, leElement, active_count);
         printf("save low vl=%d active_count=%d ", vl, active_count);
@@ -98,7 +105,7 @@ int partitionRisc(int arr[], int low, int high) {
         mask = __riscv_vmsgt_vx_i32m1_b32(vec_a, pivot, vl);
         vint32m1_t gtElement = __riscv_vcompress_vm_i32m1(vec_a, mask, vl);
         //print_vint32m1(gtElement);
-        //printf("higher \n");
+
         active_count = __riscv_vcpop_m_b32(mask, vl);
         __riscv_vse32_v_i32m1(arr + h - (active_count - 1), gtElement, active_count);
         printf("save high vl=%d active_count=%d ", vl, active_count);
