@@ -111,98 +111,49 @@ void init_array_one_2d(double** ar, int n, int m) {
 #include <stdio.h>
 
 
-
-unsigned char* strncpy_vec(unsigned char* destination, const unsigned char* source, size_t n) {
-    //size_t i;
-
-    // Copy up to num characters from source to destination
-//    for (i = 0; i < num && source[i] != '\0'; i++) {
-//        destination[i] = source[i];
-//    }
-
-    // If we haven't reached num characters, pad the rest with '\0'
-//    for (; i < num; i++) {
-//        destination[i] = '\0';
-//    }
-    unsigned char* dst = destination;
-    unsigned const char* src = source;
-
-    for (size_t vl; n > 0; n -= vl, src += vl, dst += vl) {
-        vl = __riscv_vsetvl_e8m8(n);
-        vuint8m8_t vec_src = __riscv_vle8ff_v_u8m8(src, &vl, vl);
-        __riscv_vse8_v_u8m8(dst, vec_src, vl);
-        // find \0
-        // count number which is  not \0
-        vbool1_t mask = __riscv_vmseq_vx_u8m8_b1(vec_src, '\0', vl);
-        int valid = __riscv_vfirst_m_b1(mask, vl);
-        if (valid >= 0) {
-            n -= valid;
-            src += valid;
-            dst += valid;
-            break;
-        }
+// branch and assign
+void branch_golden(double* a, double* b, double* c, int n, double constant) {
+    for (int i = 0; i < n; ++i) {
+        c[i] = (b[i] != 0.0) ? a[i] / b[i] : constant;
     }
-
-
-    size_t vlmax = __riscv_vsetvlmax_e8m8();
-    vuint8m8_t zero_vector = __riscv_vmv_v_x_u8m8(0, vlmax);
-    for (size_t vl; n > 0; n -= vl, dst += vl) {
-        vl = __riscv_vsetvl_e8m8(n);
-        __riscv_vse8_v_u8m8(dst, zero_vector, vl);
-    }
-
-    /*
-    size_t vlmax = __riscv_vsetvlmax_e8m8();
-
-    // Create a zero vector
-    vuint8m8_t zero_vector = __riscv_vmv_v_x_u8m8(0, vlmax);
-
-    // Iterate over the array in chunks of vl elements
-    while (n > 0) {
-        // Set the vector length for the current chunk
-        size_t vl = __riscv_vsetvl_e8m8(n);
-
-        // Store the zero vector into the destination array
-        __riscv_vse8_v_u8m8(dst, zero_vector, vl);
-
-        // Move the destination pointer forward by vl elements
-        dst += vl;
-
-        // Decrease the remaining number of elements to process
-        n -= vl;
-    }
-    */
-
-    /*
-    while (n > 0) {
-        *dst = '\0';
-        dst++;
-        n--;
-    }
-    */
-
-    return destination;
 }
 
+void branch_vec(double* a, double* b, double* c, int n, double constant) {
+    // set vlmax and initialize variables
+    for (size_t vl; n > 0; n -= vl, a += vl, b += vl, c += vl) {
+        vl = __riscv_vsetvl_e64m8(n);
+        vfloat64m8_t vec_a = __riscv_vle64ff_v_f64m8(a, &vl, vl);
+        vfloat64m8_t vec_b = __riscv_vle64_v_f64m8(b, vl);
+        vbool8_t mask = __riscv_vmfeq_vf_f64m8_b8(vec_b, 0.0, vl);
+        vfloat64m8_t one_vector = __riscv_vfmv_v_f_f64m8(1.0, vl);
+        vec_b = __riscv_vmerge_vvm_f64m8(vec_b, one_vector, mask, vl);
+        vfloat64m8_t vec_c = __riscv_vfdiv_vv_f64m8(vec_a, vec_b, vl);
+        one_vector = __riscv_vfmv_v_f_f64m8(constant, vl);
+        vec_c = __riscv_vmerge_vvm_f64m8(vec_c, one_vector, mask, vl);
+        __riscv_vse64_v_f64m8(c, vec_c, vl);
+    }
+}
 
 int main() {
-    const int N = 1320;
+    const int N = 31;
+    const double constant = 7122.0;
     const uint32_t seed = 0xdeadbeef;
     srand(seed);
 
     // data gen
-    char s0[N];
-    gen_string(s0, N);
-    char s1[] = "the quick brown fox jumps over the lazy dog";
-    size_t count = strlen(s1) + rand() % 500;
+    double A[N], B[N];
+    gen_rand_1d(A, N);
+    gen_rand_1d(B, N);
+    for (int i = 0; i < 5; ++i) {
+        int pos = rand() % N;
+        B[pos] = 0;
+    }
 
     // compute
-    char golden[N], actual[N];
-    strcpy(golden, s0);
-    strcpy(actual, s0);
-    strncpy(golden, s1, count);
-    strncpy_vec(actual, s1, count);
+    double golden[N], actual[N];
+    branch_golden(A, B, golden, N, constant);
+    branch_vec(A, B, actual, N, constant);
 
     // compare
-    puts(compare_string(golden, actual, N) ? "pass" : "fail");
+    puts(compare_1d(golden, actual, N) ? "pass" : "fail");
 }
