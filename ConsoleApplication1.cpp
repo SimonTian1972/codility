@@ -1,163 +1,208 @@
-﻿
+﻿// common.h
+// common utilities for the test code under exmaples/
 
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+void gen_rand_1d(double* a, int n) {
+    for (int i = 0; i < n; ++i)
+        a[i] = (double)rand() / (double)RAND_MAX + (double)(rand() % 1000);
+}
+
+void gen_string(char* s, int n) {
+    // char value range: -128 ~ 127
+    for (int i = 0; i < n - 1; ++i)
+        s[i] = (char)(rand() % 127) + 1;
+    s[n - 1] = '\0';
+}
+
+void gen_rand_2d(double** ar, int n, int m) {
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < m; ++j)
+            ar[i][j] = (double)rand() / (double)RAND_MAX + (double)(rand() % 1000);
+}
+
+void print_string(const char* a, const char* name) {
+    printf("const char *%s = \"", name);
+    int i = 0;
+    while (a[i] != 0)
+        putchar(a[i++]);
+    printf("\"\n");
+    puts("");
+}
+
+void print_array_1d(double* a, int n, const char* type, const char* name) {
+    printf("%s %s[%d] = {\n", type, name, n);
+    for (int i = 0; i < n; ++i) {
+        printf("%06.2f%s", a[i], i != n - 1 ? "," : "};\n");
+        if (i % 10 == 9)
+            puts("");
+    }
+    puts("");
+}
+
+void print_array_2d(double** a, int n, int m, const char* type,
+    const char* name) {
+    printf("%s %s[%d][%d] = {\n", type, name, n, m);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            printf("%06.2f", a[i][j]);
+            if (j == m - 1)
+                puts(i == n - 1 ? "};" : ",");
+            else
+                putchar(',');
+        }
+    }
+    puts("");
+}
+
+bool double_eq(double golden, double actual, double relErr) {
+    return (fabs(actual - golden) < relErr);
+}
+
+bool compare_1d(double* golden, double* actual, int n) {
+    for (int i = 0; i < n; ++i)
+        if (!double_eq(golden[i], actual[i], 1e-6))
+            return false;
+    return true;
+}
+
+bool compare_string(const char* golden, const char* actual, int n) {
+    for (int i = 0; i < n; ++i)
+        if (golden[i] != actual[i])
+            return false;
+    return true;
+}
+
+bool compare_2d(double** golden, double** actual, int n, int m) {
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < m; ++j)
+            if (!double_eq(golden[i][j], actual[i][j], 1e-6))
+                return false;
+    return true;
+}
+
+double** alloc_array_2d(int n, int m) {
+    double** ret;
+    ret = (double**)malloc(sizeof(double*) * n);
+    for (int i = 0; i < n; ++i)
+        ret[i] = (double*)malloc(sizeof(double) * m);
+    return ret;
+}
+
+void init_array_one_1d(double* ar, int n) {
+    for (int i = 0; i < n; ++i)
+        ar[i] = 1;
+}
+
+void init_array_one_2d(double** ar, int n, int m) {
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < m; ++j)
+            ar[i][j] = 1;
+}
 
 
 #include <riscv_vector.h>
 #include <string.h>
-#include <stddef.h>
-#include <limits.h>
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdio.h>
 
-// Function to swap two elements
-void swap(int* a, int* b) {
-    int t = *a;
-    *a = *b;
-    *b = t;
-}
 
-// Partition function to place the pivot element at its correct position
-// and place smaller elements to the left and greater elements to the right
-int partition(int arr[], int low, int high) {
-    int pivot = arr[high];  // pivot
-    int i = (low - 1);      // Index of smaller element
 
-    for (int j = low; j <= high - 1; j++) {
-        // If current element is smaller than or equal to pivot
-        if (arr[j] <= pivot) {
-            i++;  // increment index of smaller element
-            swap(&arr[i], &arr[j]);
+unsigned char* strncpy_vec(unsigned char* destination, const unsigned char* source, size_t n) {
+    //size_t i;
+
+    // Copy up to num characters from source to destination
+//    for (i = 0; i < num && source[i] != '\0'; i++) {
+//        destination[i] = source[i];
+//    }
+
+    // If we haven't reached num characters, pad the rest with '\0'
+//    for (; i < num; i++) {
+//        destination[i] = '\0';
+//    }
+    unsigned char* dst = destination;
+    unsigned const char* src = source;
+
+    for (size_t vl; n > 0; n -= vl, src += vl, dst += vl) {
+        vl = __riscv_vsetvl_e8m8(n);
+        vuint8m8_t vec_src = __riscv_vle8ff_v_u8m8(src, &vl, vl);
+        __riscv_vse8_v_u8m8(dst, vec_src, vl);
+        // find \0
+        // count number which is  not \0
+        vbool1_t mask = __riscv_vmseq_vx_u8m8_b1(vec_src, '\0', vl);
+        int valid = __riscv_vfirst_m_b1(mask, vl);
+        if (valid >= 0) {
+            n -= valid;
+            src += valid;
+            dst += valid;
+            break;
         }
     }
-    swap(&arr[i + 1], &arr[high]);
-    return (i + 1);
-}
-
-// QuickSort function
-void quickSort(int arr[], int low, int high) {
-    if (low < high) {
-        // pi is partitioning index, arr[p] is now at right place
-        int pi = partition(arr, low, high);
-
-        // Separately sort elements before partition and after partition
-        quickSort(arr, low, pi - 1);
-        quickSort(arr, pi + 1, high);
-    }
-}
 
 
-void print_vint32m1(vint32m1_t vec, size_t vl) {
-    int32_t buffer[100]; // VLENMAX should be the maximum vector length
-    // Store vector elements into a buffer
-    __riscv_vse32_v_i32m1(buffer, vec, vl);
-
-    // Print each element
-    for (size_t i = 0; i < vl; ++i) {
-        printf("%d ", buffer[i]);
-    }
-    printf("\n");
-}
-
-void print_mask(vbool32_t mask, size_t vl) {
-    uint8_t buffer[100];
-    __riscv_vsm_v_b32(buffer, mask, vl);
-    for (size_t i = 0; i < vl / 8 + (vl % 8 != 0); i++) {
-        printf("%02X ", buffer[i]);
-    }
-    printf("\n");
-}
-
-void printArray1(int arr[], int low, int high) {
-    printf("low=%d high=%d ", low, high);
-    for (int i = low; i <= high; i++) {
-        printf("%d ", arr[i]);
-    }
-    printf("\n");
-}
-
-int partitionRisc(int arr[], int low, int high) {
-    int pivot = arr[high];  // pivot
-    int l = low; // low of unknow area
-    int h = high - 1; // high of unknow area
-    size_t vl = 0;
-    size_t vlmax = __riscv_vsetvlmax_e32m1();
-    printArray1(arr, low, high);
-    while (l <= h) { // l will point the first high element 
-        vl = __riscv_vsetvl_e32m1(h - l + 1); // h will point the last low element
-        vint32m1_t vec_a = __riscv_vle32_v_i32m1(arr + l, vl);
-        vint32m1_t vec_b = __riscv_vle32_v_i32m1(arr + h - (vl - 1), vl);
-        //print_vint32m1(vec_a, vl);
-
-
-        vbool32_t mask = __riscv_vmsle_vx_i32m1_b32(vec_a, pivot, vl);
-        vint32m1_t leElement = __riscv_vcompress_vm_i32m1(vec_a, mask, vl);
-        print_mask(mask, vl);
-
-        size_t active_count = __riscv_vcpop_m_b32(mask, vl);
-        __riscv_vse32_v_i32m1(arr + l, leElement, active_count);
-        printf("save low vl=%d active_count=%d ", vl, active_count);
-        printArray1(arr, low, high);
-        l = l + active_count;
-
-        mask = __riscv_vmsgt_vx_i32m1_b32(vec_a, pivot, vl);
-        vint32m1_t gtElement = __riscv_vcompress_vm_i32m1(vec_a, mask, vl);
-        //print_vint32m1(gtElement);
-
-        active_count = __riscv_vcpop_m_b32(mask, vl);
-        __riscv_vse32_v_i32m1(arr + h - (active_count - 1), gtElement, active_count);
-        printf("save high vl=%d active_count=%d ", vl, active_count);
-        printArray1(arr, low, high);
-        int overlap = 2 * (int)active_count - (h - l + 1);
-        if (overlap < 0) {
-            overlap = 0;
-        }
-        h = h - active_count;
-
-        vec_b = __riscv_vslidedown_vx_i32m1(vec_b, vlmax - active_count + overlap, vl);
-        printf("move low active_count=%d ", active_count - overlap);
-        __riscv_vse32_v_i32m1(arr + l, vec_b, active_count - overlap);
-        printArray1(arr, low, high);
+    size_t vlmax = __riscv_vsetvlmax_e8m8();
+    vuint8m8_t zero_vector = __riscv_vmv_v_x_u8m8(0, vlmax);
+    for (size_t vl; n > 0; n -= vl, dst += vl) {
+        vl = __riscv_vsetvl_e8m8(n);
+        __riscv_vse8_v_u8m8(dst, zero_vector, vl);
     }
 
-    swap(&arr[l], &arr[high]);// swap with pivot
-    printArray1(arr, low, high);
-    return l;
-}
+    /*
+    size_t vlmax = __riscv_vsetvlmax_e8m8();
 
+    // Create a zero vector
+    vuint8m8_t zero_vector = __riscv_vmv_v_x_u8m8(0, vlmax);
 
-void quickSortRisc(int arr[], int low, int high) {
-    if (low < high) {
-        // pi is partitioning index, arr[p] is now at right place
-        int pi = partitionRisc(arr, low, high);
+    // Iterate over the array in chunks of vl elements
+    while (n > 0) {
+        // Set the vector length for the current chunk
+        size_t vl = __riscv_vsetvl_e8m8(n);
 
-        // Separately sort elements before partition and after partition
-        quickSortRisc(arr, low, pi - 1);
-        quickSortRisc(arr, pi + 1, high);
+        // Store the zero vector into the destination array
+        __riscv_vse8_v_u8m8(dst, zero_vector, vl);
+
+        // Move the destination pointer forward by vl elements
+        dst += vl;
+
+        // Decrease the remaining number of elements to process
+        n -= vl;
     }
-}
+    */
 
-// Function to print an array
-void printArray(int arr[], int size) {
-    for (int i = 0; i < size; i++) {
-        printf("%d ", arr[i]);
+    /*
+    while (n > 0) {
+        *dst = '\0';
+        dst++;
+        n--;
     }
-    printf("\n");
+    */
+
+    return destination;
 }
 
-// Driver program to test the above functions
+
 int main() {
-    int arr[] = { 10, 7, 8, 9, 1, 5 };
-    int n = sizeof(arr) / sizeof(arr[0]);
-    printf("Given array is \n");
-    printArray(arr, n);
+    const int N = 1320;
+    const uint32_t seed = 0xdeadbeef;
+    srand(seed);
 
-    quickSortRisc(arr, 0, n - 1);
+    // data gen
+    char s0[N];
+    gen_string(s0, N);
+    char s1[] = "the quick brown fox jumps over the lazy dog";
+    size_t count = strlen(s1) + rand() % 500;
 
-    printf("Sorted array is \n");
-    printArray(arr, n);
-    return 0;
+    // compute
+    char golden[N], actual[N];
+    strcpy(golden, s0);
+    strcpy(actual, s0);
+    strncpy(golden, s1, count);
+    strncpy_vec(actual, s1, count);
+
+    // compare
+    puts(compare_string(golden, actual, N) ? "pass" : "fail");
 }
-
