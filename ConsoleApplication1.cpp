@@ -105,54 +105,48 @@ void init_array_one_2d(double** ar, int n, int m) {
             ar[i][j] = 1;
 }
 
-
 #include <riscv_vector.h>
-#include <string.h>
-#include <stdio.h>
 
-
-// branch and assign
-void branch_golden(double* a, double* b, double* c, int n, double constant) {
+// index arithmetic
+void index_golden(double* a, double* b, double* c, int n) {
     for (int i = 0; i < n; ++i) {
-        c[i] = (b[i] != 0.0) ? a[i] / b[i] : constant;
+        a[i] = b[i] + (double)i * c[i];
     }
 }
 
-void branch_vec(double* a, double* b, double* c, int n, double constant) {
-    // set vlmax and initialize variables
+void index_vec(double* a, double* b, double* c, int n) {
+    size_t vlmax = __riscv_vsetvlmax_e32m4();
+    vuint32m4_t vec_i = __riscv_vid_v_u32m4(vlmax);
     for (size_t vl; n > 0; n -= vl, a += vl, b += vl, c += vl) {
         vl = __riscv_vsetvl_e64m8(n);
-        vfloat64m8_t vec_a = __riscv_vle64ff_v_f64m8(a, &vl, vl);
-        vfloat64m8_t vec_b = __riscv_vle64_v_f64m8(b, vl);
-        vbool8_t mask = __riscv_vmfeq_vf_f64m8_b8(vec_b, 0.0, vl);
-        vfloat64m8_t one_vector = __riscv_vfmv_v_f_f64m8(1.0, vl);
-        vec_b = __riscv_vmerge_vvm_f64m8(vec_b, one_vector, mask, vl);
-        vfloat64m8_t vec_c = __riscv_vfdiv_vv_f64m8(vec_a, vec_b, vl);
-        one_vector = __riscv_vfmv_v_f_f64m8(constant, vl);
-        vec_c = __riscv_vmerge_vvm_f64m8(vec_c, one_vector, mask, vl);
-        __riscv_vse64_v_f64m8(c, vec_c, vl);
+        vfloat64m8_t vec_i_double = __riscv_vfwcvt_f_xu_v_f64m8(vec_i, vl);
+
+        vfloat64m8_t vec_b = __riscv_vle64ff_v_f64m8(b, &vl, vl);
+        vfloat64m8_t vec_c = __riscv_vle64_v_f64m8(c, vl);
+        vec_c = __riscv_vfmul_vv_f64m8(vec_c, vec_i_double, vl);
+
+        vfloat64m8_t vec_a = __riscv_vfadd_vv_f64m8(vec_b, vec_c, vl);
+        //vfloat64m8_t vec_a = __riscv_vfmadd_vv_f64m8(vec_c, vec_i_double, vec_b, vl);
+        __riscv_vse64_v_f64m8(a, vec_a, vl);
+
+        vec_i = __riscv_vadd_vx_u32m4(vec_i, vl, vl);
     }
 }
 
 int main() {
     const int N = 31;
-    const double constant = 7122.0;
     const uint32_t seed = 0xdeadbeef;
     srand(seed);
 
     // data gen
-    double A[N], B[N];
-    gen_rand_1d(A, N);
+    double B[N], C[N];
     gen_rand_1d(B, N);
-    for (int i = 0; i < 5; ++i) {
-        int pos = rand() % N;
-        B[pos] = 0;
-    }
+    gen_rand_1d(C, N);
 
     // compute
     double golden[N], actual[N];
-    branch_golden(A, B, golden, N, constant);
-    branch_vec(A, B, actual, N, constant);
+    index_golden(golden, B, C, N);
+    index_vec(actual, B, C, N);
 
     // compare
     puts(compare_1d(golden, actual, N) ? "pass" : "fail");
