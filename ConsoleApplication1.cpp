@@ -106,47 +106,46 @@ void init_array_one_2d(double** ar, int n, int m) {
 }
 
 #include <riscv_vector.h>
+#include <string.h>
 
-// index arithmetic
-void index_golden(double* a, double* b, double* c, int n) {
-    for (int i = 0; i < n; ++i) {
-        a[i] = b[i] + (double)i * c[i];
+void* memcpy_vec(void* restrict destination, const void* restrict source,
+    size_t n) {
+    unsigned char* dst = destination;
+    unsigned char* src = source;
+    for (size_t vl; n > 0; n -= vl, dst += vl, src += vl) {
+        vl = __riscv_vsetvl_e8m8(n);
+        //vuint8m8_t vec_src = __riscv_vle8ff_v_u8m8(src, &vl, vl);
+        vuint8m8_t vec_src = __riscv_vle8_v_u8m8(src, vl);
+        __riscv_vse8_v_u8m8(dst, vec_src, vl);
+        /*
+        vbool1_t mask = __riscv_vmseq_vx_u8m8_b1(vec_src, 0, vl);
+        int first_set_bit_index = __riscv_vfirst_m_b1(mask, vl);
+        if (first_set_bit_index > 0) {
+            __riscv_vse8_v_u8m8(dst, vec_src, first_set_bit_index);
+            dst += first_set_bit_index;
+            break;
+        }
+        else {
+            __riscv_vse8_v_u8m8(dst, vec_src, vl);
+        }
+        */
     }
-}
-
-void index_vec(double* a, double* b, double* c, int n) {
-    size_t vlmax = __riscv_vsetvlmax_e32m4();
-    vuint32m4_t vec_i = __riscv_vid_v_u32m4(vlmax);
-    for (size_t vl; n > 0; n -= vl, a += vl, b += vl, c += vl) {
-        vl = __riscv_vsetvl_e64m8(n);
-        vfloat64m8_t vec_i_double = __riscv_vfwcvt_f_xu_v_f64m8(vec_i, vl);
-
-        vfloat64m8_t vec_b = __riscv_vle64ff_v_f64m8(b, &vl, vl);
-        vfloat64m8_t vec_c = __riscv_vle64_v_f64m8(c, vl);
-        vec_c = __riscv_vfmul_vv_f64m8(vec_c, vec_i_double, vl);
-
-        vfloat64m8_t vec_a = __riscv_vfadd_vv_f64m8(vec_b, vec_c, vl);
-        //vfloat64m8_t vec_a = __riscv_vfmadd_vv_f64m8(vec_c, vec_i_double, vec_b, vl);
-        __riscv_vse64_v_f64m8(a, vec_a, vl);
-
-        vec_i = __riscv_vadd_vx_u32m4(vec_i, vl, vl);
-    }
+    return destination;
 }
 
 int main() {
-    const int N = 31;
+    const int N = 127;
     const uint32_t seed = 0xdeadbeef;
     srand(seed);
 
     // data gen
-    double B[N], C[N];
-    gen_rand_1d(B, N);
-    gen_rand_1d(C, N);
+    double A[N];
+    gen_rand_1d(A, N);
 
     // compute
     double golden[N], actual[N];
-    index_golden(golden, B, C, N);
-    index_vec(actual, B, C, N);
+    memcpy(golden, A, sizeof(A));
+    memcpy_vec(actual, A, sizeof(A));
 
     // compare
     puts(compare_1d(golden, actual, N) ? "pass" : "fail");
