@@ -105,48 +105,63 @@ void init_array_one_2d(double** ar, int n, int m) {
             ar[i][j] = 1;
 }
 
-#include <riscv_vector.h>
-#include <string.h>
 
-void* memcpy_vec(void* restrict destination, const void* restrict source,
-    size_t n) {
-    unsigned char* dst = destination;
-    unsigned char* src = source;
-    for (size_t vl; n > 0; n -= vl, dst += vl, src += vl) {
-        vl = __riscv_vsetvl_e8m8(n);
-        //vuint8m8_t vec_src = __riscv_vle8ff_v_u8m8(src, &vl, vl);
-        vuint8m8_t vec_src = __riscv_vle8_v_u8m8(src, vl);
-        __riscv_vse8_v_u8m8(dst, vec_src, vl);
-        /*
-        vbool1_t mask = __riscv_vmseq_vx_u8m8_b1(vec_src, 0, vl);
-        int first_set_bit_index = __riscv_vfirst_m_b1(mask, vl);
-        if (first_set_bit_index > 0) {
-            __riscv_vse8_v_u8m8(dst, vec_src, first_set_bit_index);
-            dst += first_set_bit_index;
-            break;
+
+#include <riscv_vector.h>
+
+// accumulate and reduce
+void reduce_golden(double* a, double* b, double* result_sum,
+    int* result_count, int n) {
+    int count = 0;
+    double s = 0;
+    for (int i = 0; i < n; ++i) {
+        if (a[i] != 42.0) {
+            s += a[i] * b[i];
+            count++;
         }
-        else {
-            __riscv_vse8_v_u8m8(dst, vec_src, vl);
-        }
-        */
     }
-    return destination;
+
+    *result_sum = s;
+    *result_count = count;
+}
+
+void reduce_vec(double* a, double* b, double* result_sum, int* result_count,
+    int n) {
+    int count = 0;
+    int vlmax = __riscv_vsetvlmax_e64m8();
+    vfloat64m1_t vec_zero = __riscv_vfmv_v_f_f64m1(0.0f, vlmax);
+    vfloat64m8_t vec_s = __riscv_vfmv_v_f_f64m8(0.0f, vlmax);
+    for (size_t vl; n > 0; n -= vl, a += vl, b += vl) {
+        vl = __riscv_vsetvl_e64m8(n);
+        vfloat64m8_t vec_a = __riscv_vle64_v_f64m8(a, vl);
+        vfloat64m8_t vec_b = __riscv_vle64_v_f64m8(b, vl);
+        vbool8_t mask = __riscv_vmfne_vf_f64m8_b8(vec_a, 42.0, vl);
+        vec_a = __riscv_vfmul_vv_f64m8(vec_a, vec_b, vl);
+        vec_s = __riscv_vfadd_vv_f64m8_m(mask, vec_a, vec_s, vl);
+        count = count + __riscv_vcpop_m_b8(mask, vl);
+    }
+    vec_zero = __riscv_vfredusum_vs_f64m8_f64m1(vec_s, vec_zero, vlmax);
+    *result_sum = __riscv_vfmv_f_s_f64m1_f64(vec_zero);
+    *result_count = count;
 }
 
 int main() {
-    const int N = 127;
-    const uint32_t seed = 0xdeadbeef;
+    const int N = 31;
+    uint32_t seed = 0xdeadbeef;
     srand(seed);
 
     // data gen
-    double A[N];
+    double A[N], B[N];
     gen_rand_1d(A, N);
+    gen_rand_1d(B, N);
 
     // compute
-    double golden[N], actual[N];
-    memcpy(golden, A, sizeof(A));
-    memcpy_vec(actual, A, sizeof(A));
+    double golden_sum, actual_sum;
+    int golden_count, actual_count;
+    reduce_golden(A, B, &golden_sum, &golden_count, N);
+    reduce_vec(A, B, &actual_sum, &actual_count, N);
 
     // compare
-    puts(compare_1d(golden, actual, N) ? "pass" : "fail");
+    puts(golden_sum - actual_sum < 1e-6 && golden_count == actual_count ? "pass"
+        : "fail");
 }
