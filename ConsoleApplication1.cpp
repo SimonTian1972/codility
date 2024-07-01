@@ -106,62 +106,91 @@ void init_array_one_2d(double** ar, int n, int m) {
 }
 
 
-
 #include <riscv_vector.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <math.h>
 
-// accumulate and reduce
-void reduce_golden(double* a, double* b, double* result_sum,
-    int* result_count, int n) {
-    int count = 0;
-    double s = 0;
-    for (int i = 0; i < n; ++i) {
-        if (a[i] != 42.0) {
-            s += a[i] * b[i];
-            count++;
-        }
+#define N 31
+
+float input[N] = { -0.4325648115282207, -1.6655843782380970, 0.1253323064748307,
+                  0.2876764203585489,  -1.1464713506814637, 1.1909154656429988,
+                  1.1891642016521031,  -0.0376332765933176, 0.3272923614086541,
+                  0.1746391428209245,  -0.1867085776814394, 0.7257905482933027,
+                  -0.5883165430141887, 2.1831858181971011,  -0.1363958830865957,
+                  0.1139313135208096,  1.0667682113591888,  0.0592814605236053,
+                  -0.0956484054836690, -0.8323494636500225, 0.2944108163926404,
+                  -1.3361818579378040, 0.7143245518189522,  1.6235620644462707,
+                  -0.6917757017022868, 0.8579966728282626,  1.2540014216025324,
+                  -1.5937295764474768, -1.4409644319010200, 0.5711476236581780,
+                  -0.3998855777153632 };
+
+float output_golden[N] = {
+    1.7491401329284098,  0.1325982188803279,  0.3252281811989881,
+    -0.7938091410349637, 0.3149236145048914,  -0.5272704888029532,
+    0.9322666565031119,  1.1646643544607362,  -2.0456694357357357,
+    -0.6443728590041911, 1.7410657940825480,  0.4867684246821860,
+    1.0488288293660140,  1.4885752747099299,  1.2705014969484090,
+    -1.8561241921210170, 2.1343209047321410,  1.4358467535865909,
+    -0.9173023332875400, -1.1060770780029008, 0.8105708062681296,
+    0.6985430696369063,  -0.4015827425012831, 1.2687512030669628,
+    -0.7836083053674872, 0.2132664971465569,  0.7878984786088954,
+    0.8966819356782295,  -0.1869172943544062, 1.0131816724341454,
+    0.2484350696132857 };
+
+float output[N] = {
+    1.7491401329284098,  0.1325982188803279,  0.3252281811989881,
+    -0.7938091410349637, 0.3149236145048914,  -0.5272704888029532,
+    0.9322666565031119,  1.1646643544607362,  -2.0456694357357357,
+    -0.6443728590041911, 1.7410657940825480,  0.4867684246821860,
+    1.0488288293660140,  1.4885752747099299,  1.2705014969484090,
+    -1.8561241921210170, 2.1343209047321410,  1.4358467535865909,
+    -0.9173023332875400, -1.1060770780029008, 0.8105708062681296,
+    0.6985430696369063,  -0.4015827425012831, 1.2687512030669628,
+    -0.7836083053674872, 0.2132664971465569,  0.7878984786088954,
+    0.8966819356782295,  -0.1869172943544062, 1.0131816724341454,
+    0.2484350696132857 };
+
+void saxpy_golden(size_t n, const float a, const float* x, float* y) {
+    for (size_t i = 0; i < n; ++i) {
+        y[i] = a * x[i] + y[i];
     }
-
-    *result_sum = s;
-    *result_count = count;
 }
 
-void reduce_vec(double* a, double* b, double* result_sum, int* result_count,
-    int n) {
-    int count = 0;
-    int vlmax = __riscv_vsetvlmax_e64m8();
-    vfloat64m1_t vec_zero = __riscv_vfmv_v_f_f64m1(0.0f, vlmax);
-    vfloat64m8_t vec_s = __riscv_vfmv_v_f_f64m8(0.0f, vlmax);
-    for (size_t vl; n > 0; n -= vl, a += vl, b += vl) {
-        vl = __riscv_vsetvl_e64m8(n);
-        vfloat64m8_t vec_a = __riscv_vle64_v_f64m8(a, vl);
-        vfloat64m8_t vec_b = __riscv_vle64_v_f64m8(b, vl);
-        vbool8_t mask = __riscv_vmfne_vf_f64m8_b8(vec_a, 42.0, vl);
-        vec_a = __riscv_vfmul_vv_f64m8(vec_a, vec_b, vl);
-        vec_s = __riscv_vfadd_vv_f64m8_m(mask, vec_a, vec_s, vl);
-        count = count + __riscv_vcpop_m_b8(mask, vl);
+// reference https://github.com/riscv/riscv-v-spec/blob/master/example/saxpy.s
+void saxpy_vec(size_t n, const float a, const float* x, float* y) {
+    for (size_t vl; n > 0; n -= vl, x += vl, y += vl) {
+        vl = __riscv_vsetvl_e32m8(n);
+        vfloat32m8_t vec_x = __riscv_vle32_v_f32m8(x, vl);
+        vfloat32m8_t vec_y = __riscv_vle32_v_f32m8(y, vl);
+        vec_x = __riscv_vfmul_vf_f32m8(vec_x, a, vl);
+        vec_y = __riscv_vfadd_vv_f32m8(vec_x, vec_y, vl);
+        __riscv_vse32_v_f32m8(y, vec_y, vl);
     }
-    vec_zero = __riscv_vfredusum_vs_f64m8_f64m1(vec_s, vec_zero, vlmax);
-    *result_sum = __riscv_vfmv_f_s_f64m1_f64(vec_zero);
-    *result_count = count;
 }
+
+int fp_eq(float reference, float actual, float relErr)
+{
+    // if near zero, do absolute error instead.
+    float absErr = relErr * ((fabsf(reference) > relErr) ? fabsf(reference) : relErr);
+    return fabsf(actual - reference) < absErr;
+}
+
 
 int main() {
-    const int N = 31;
-    uint32_t seed = 0xdeadbeef;
-    srand(seed);
-
-    // data gen
-    double A[N], B[N];
-    gen_rand_1d(A, N);
-    gen_rand_1d(B, N);
-
-    // compute
-    double golden_sum, actual_sum;
-    int golden_count, actual_count;
-    reduce_golden(A, B, &golden_sum, &golden_count, N);
-    reduce_vec(A, B, &actual_sum, &actual_count, N);
-
-    // compare
-    puts(golden_sum - actual_sum < 1e-6 && golden_count == actual_count ? "pass"
-        : "fail");
+    saxpy_golden(N, 55.66, input, output_golden);
+    saxpy_vec(N, 55.66, input, output);
+    int pass = 1;
+    for (int i = 0; i < N; i++) {
+        if (!fp_eq(output_golden[i], output[i], 1e-6)) {
+            printf("fail, %f=!%f\n", output_golden[i], output[i]);
+            pass = 0;
+        }
+    }
+    if (pass)
+        printf("pass\n");
+    return (pass == 0);
 }
+
+
+
