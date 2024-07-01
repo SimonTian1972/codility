@@ -8,7 +8,7 @@ size_t strlen_vec(char* source) {
     size_t vl;
     size_t count = 0;
     while (true) {
-        vint8m8_t vec_src = __riscv_vle8ff_v_i8m8(source, &vl, vlmax);
+        vint8m8_t vec_src = __riscv_vle8ff_v_i8m8((int8_t*)source, &vl, vlmax);
         vbool1_t mask = __riscv_vmseq_vx_i8m8_b1(vec_src, 0, vl);
         int pos = __riscv_vfirst_m_b1(mask, vl);
         if (pos == -1) {
