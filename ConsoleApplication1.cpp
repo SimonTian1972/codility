@@ -23,7 +23,7 @@ int maxRiscv(int* energy, int energySize, int k) {
             vbool32_t mask = __riscv_vmslt_vx_i32m1_b32(vec_seq, energySize, vl);
             vint32m1_t vec_cur = __riscv_vmv_v_x_i32m1(0, vl);
             size_t temp;
-            vec_cur = __riscv_vle32ff_v_i32m1_m(mask, energy + j, &temp, vl);
+            vec_cur = __riscv_vle32ff_v_i32m1_tumu(mask, vec_cur, energy + j, &temp, vl);
 
             vbool32_t maskPrev = __riscv_vmslt_vx_i32m1_b32(vec_sum, 0, vl);
             mask = __riscv_vmand_mm_b32(mask, maskPrev, vl);
