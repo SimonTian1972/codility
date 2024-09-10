@@ -1,0 +1,23 @@
+./riscv/bin/clang -march=rv32gcv -o rvv_memcpy.elf rvv_memcpy.c
+
+./qemu-9.0.1/build/qemu-riscv32  rvv_example/main
+
+./riscv/bin/qemu-riscv32   rvv_example/main
+
+./riscv/bin/qemu-riscv32   aes.elf
+
+sitian@DESKTOP-T4NCDFL:~/rvv_example$ which riscv32-unknown-elf-gcc
+/opt/riscv/bin/riscv32-unknown-elf-gcc
+
+./riscv/bin/qemu-riscv32  rvv_memcpy.elf
+
+from ./rvv_example  riscv32-unknown-elf-gcc -O main.c vec.S -o main -march=rv32gcv_zba -lm
+
+
+
+99  tar -xvf riscv32-elf-ubuntu-22.04-llvm-nightly-2024.09.03-nightly.tar.gz
+102  sudo cp  riscv  /opt/
+116  cp  /mnt/c/source_code/rvv-intrinsic-doc/examples/rvv_memcpy.c  ./
+127  cp  /mnt/c/source_code/rvv-intrinsic-doc/examples/common.h  ./
+129  /opt/riscv/bin/clang -march=rv32gcv -o rvv_memcpy.elf rvv_memcpy.c
+sitian@Shumin:~/example$ /opt/riscv/bin/qemu-riscv32 rvv_memcpy.elf
